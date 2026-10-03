@@ -1,0 +1,75 @@
+name: hormigestion
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Configure .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Configure .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  migrate:
+    image: hormigestion-backend:0.1.0-local
+    build: .
+    command: ["node", "dist/infrastructure/database/migrate.js"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://hormigestion_app:${APP_DB_PASSWORD:?Configure .env}@postgres:5432/${POSTGRES_DB}
+      MIGRATION_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Configure .env}
+      COMPROBANTE_SECRET: ${COMPROBANTE_SECRET:?Configure .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+  seed-demo:
+    image: hormigestion-backend:0.1.0-local
+    build: .
+    profiles: ["demo"]
+    command: ["node", "dist/infrastructure/database/seed-demo.js"]
+    environment:
+      NODE_ENV: development
+      DEMO_MODE: "true"
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Configure .env}
+      DATABASE_URL: postgresql://hormigestion_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MIGRATION_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      COMPROBANTE_SECRET: ${COMPROBANTE_SECRET}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+  api:
+    image: hormigestion-backend:0.1.0-local
+    build: .
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://hormigestion_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      COMPROBANTE_SECRET: ${COMPROBANTE_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      DEMO_MODE: ${DEMO_MODE:-true}
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+volumes:
+  postgres_data:

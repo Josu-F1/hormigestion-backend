@@ -1,0 +1,60 @@
+{
+  "project": "HormiGestion",
+  "installed_on": "2026-10-03",
+  "skills": [
+    {
+      "name": "security-best-practices",
+      "repository": "openai/skills",
+      "source_path": "skills/.curated/security-best-practices",
+      "commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "installed_path": "/home/saimoljimenez/.codex/skills/security-best-practices",
+      "skill_sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f",
+      "verified_files": 13
+    },
+    {
+      "name": "security-threat-model",
+      "repository": "openai/skills",
+      "source_path": "skills/.curated/security-threat-model",
+      "commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "installed_path": "/home/saimoljimenez/.codex/skills/security-threat-model",
+      "skill_sha256": "1283c0dd62a8104d9edda4583569b5d8510b4ddaa45120687c999250fd96bad2",
+      "verified_files": 5
+    },
+    {
+      "name": "playwright",
+      "repository": "openai/skills",
+      "source_path": "skills/.curated/playwright",
+      "commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "installed_path": "/home/saimoljimenez/.codex/skills/playwright",
+      "skill_sha256": "0ffaabcc8e0990627c4725f18bf1c7955534a796c1c199e872909de2013ce6a8",
+      "verified_files": 9
+    },
+    {
+      "name": "vercel-react-best-practices",
+      "repository": "vercel-labs/agent-skills",
+      "source_path": "skills/react-best-practices",
+      "commit": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "installed_path": "/home/saimoljimenez/.codex/skills/vercel-react-best-practices",
+      "skill_sha256": "71ed7794962fa6e803ee83030517b5b93a9f70fbfeb431ec4535c5480a8d8355",
+      "verified_files": 76
+    },
+    {
+      "name": "supabase-postgres-best-practices",
+      "repository": "supabase/agent-skills",
+      "source_path": "skills/supabase-postgres-best-practices",
+      "commit": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+      "installed_path": "/home/saimoljimenez/.codex/skills/supabase-postgres-best-practices",
+      "skill_sha256": "ad65e776f45e761bafc609d3f506c77c1032225aa65e0c4c02f241b8071e5855",
+      "verified_files": 36
+    },
+    {
+      "name": "nodejs-backend-patterns",
+      "repository": "wshobson/agents",
+      "source_path": "plugins/javascript-typescript/skills/nodejs-backend-patterns",
+      "commit": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+      "installed_path": "/home/saimoljimenez/.codex/skills/nodejs-backend-patterns",
+      "skill_sha256": "d52e1150accdc27e916f0962c9ba0872fcbe8a7d849d905dcc795c0f9d05aeae",
+      "verified_files": 3
+    }
+  ]
+}
