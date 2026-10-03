@@ -2,6 +2,7 @@ import { z } from "zod";
 import { configurationSchema, updateConfigurationSchema } from "../domain/configuracion.js";
 import { calculationSchema, createQuotationSchema } from "../domain/cotizacion.js";
 import { loginSchema, newUserSchema, userChangesSchema } from "../application/services.js";
+import { reportFiltersSchema } from "../domain/reporteria.js";
 
 const schema = (value: z.ZodType) => z.toJSONSchema(value, { io: "input", unrepresentable: "any" });
 const jsonResponse = (description: string, reference?: string) => ({ description, ...(reference ? { content: { "application/json": { schema: { $ref: `#/components/schemas/${reference}` } } } } : {}) });
@@ -14,7 +15,7 @@ const stateInput = z.strictObject({ versionEsperada: z.int().positive(), motivo:
 
 export const openApi = {
   openapi: "3.1.0",
-  info: { title: "HormiGestión API", version: "0.1.0", description: "Primer incremento: configuración editable/versionada, acceso y cotización. Los datos iniciales son ficticios. Aprobación comercial no confirma agenda; logística, calidad y proyección se implementan en siguientes incrementos." },
+  info: { title: "HormiGestión API", version: "0.2.0", description: "Configuración versionada, acceso, cotización y reportería con proyección de volumen cotizado. Aprobación comercial no confirma agenda; logística y calidad están pendientes. La proyección es estadística y aún no incorpora despachos reales." },
   servers: [{ url: "/" }],
   paths: {
     "/health/live": { get: { summary: "Proceso activo", responses: { "200": jsonResponse("Activo") } } },
@@ -42,10 +43,19 @@ export const openApi = {
     },
     "/api/v1/admin/configuracion/historial": { get: { summary: "Últimas 100 revisiones: solo administrador", security: staff, responses: { "200": jsonResponse("Versiones, motivos y autores"), ...errors } } },
     "/api/v1/mixers": { get: { summary: "Capacidades y estado administrativo: administrador/despachador; agenda pendiente", security: staff, responses: { "200": jsonResponse("Mixers con versión"), ...errors } } },
+    ...Object.fromEntries(["/api/v1/admin/reportes", "/api/v1/admin/reportes/exportar.csv"].map((path) => [path, { get: {
+      summary: path.endsWith(".csv") ? "Exportar agregados de cotización en CSV; solo administrador" : "Indicadores, demanda, proyección estadística y pulso semanal; solo administrador",
+      security: staff, parameters: [
+        { name: "desde", in: "query", schema: { type: "string", format: "date" }, description: "Fecha local inicial; rango máximo 366 días." },
+        { name: "hasta", in: "query", schema: { type: "string", format: "date" }, description: "Fecha local final inclusiva; por defecto hoy." },
+        { name: "origen", in: "query", schema: { type: "string", enum: ["DEMO", "REAL"] }, description: "Orígenes separados; por defecto el origen de la configuración vigente." },
+        { name: "resistencia", in: "query", schema: { type: "string" } }, { name: "zona", in: "query", schema: { type: "string" } },
+      ], responses: { "200": path.endsWith(".csv") ? { description: "CSV UTF-8, separador punto y coma; sin datos de clientes", content: { "text/csv": { schema: { type: "string" } } } } : jsonResponse("Indicadores, demanda, proyección, alerta, opciones y metodología; importes y volúmenes como texto decimal"), ...errors },
+    } }])),
   },
   components: {
     securitySchemes: { staffBearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" }, receiptBearer: { type: "http", scheme: "bearer", description: "Token opaco devuelto al crear la solicitud. Limitado a su comprobante y con fecha de expiración." } },
-    schemas: { Configuration: schema(configurationSchema), UpdateConfigurationInput: schema(updateConfigurationSchema), CalculationInput: schema(calculationSchema), CreateQuotationInput: schema(createQuotationSchema), LoginInput: schema(loginSchema), NewUserInput: schema(newUserSchema), UserChangesInput: schema(userChangesSchema), StateInput: schema(stateInput),
+    schemas: { ReportFilters: schema(reportFiltersSchema), Configuration: schema(configurationSchema), UpdateConfigurationInput: schema(updateConfigurationSchema), CalculationInput: schema(calculationSchema), CreateQuotationInput: schema(createQuotationSchema), LoginInput: schema(loginSchema), NewUserInput: schema(newUserSchema), UserChangesInput: schema(userChangesSchema), StateInput: schema(stateInput),
       Error: {
         type: "object",
         properties: {

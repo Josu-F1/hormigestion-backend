@@ -14,6 +14,9 @@ import { PgStore } from "./infrastructure/database/store.js";
 import type { Env } from "./infrastructure/env.js";
 import { quotationPdf } from "./infrastructure/pdf.js";
 import { openApi } from "./infrastructure/openapi.js";
+import { ReportService } from "./application/report-service.js";
+import { PgReportStore } from "./infrastructure/database/report-store.js";
+import { reportFiltersSchema } from "./domain/reporteria.js";
 
 const uuid = z.uuid();
 const changeStateSchema = z.strictObject({ versionEsperada: z.int().positive(), motivo: z.string().trim().min(5).max(500) });
@@ -34,6 +37,7 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   const auth = new AuthService(repository, env.JWT_SECRET);
   const settings = new ConfigurationService(repository);
   const quotes = new QuotationService(repository, repository, auth, env.COMPROBANTE_SECRET, options.clock);
+  const reports = new ReportService(new PgReportStore(pool), options.clock);
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", false);
@@ -94,6 +98,11 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   const privateApi = express.Router();
   privateApi.use(async (req, res, next) => { res.locals.actor = await auth.authenticate(bearer(req)); next(); });
   privateApi.get("/auth/me", (_req, res) => res.json({ usuario: actorFrom(res) }));
+  privateApi.get("/admin/reportes", async (req, res) => res.json(await reports.report(reportFiltersSchema.parse(req.query), actorFrom(res))));
+  privateApi.get("/admin/reportes/exportar.csv", async (req, res) => {
+    const result = await reports.csv(reportFiltersSchema.parse(req.query), actorFrom(res));
+    res.set("Content-Type", "text/csv; charset=utf-8").set("Content-Disposition", `attachment; filename="${result.filename}"`).send(result.content);
+  });
   privateApi.get("/usuarios", async (_req, res) => res.json({ data: await auth.users(actorFrom(res)) }));
   privateApi.post("/usuarios", async (req, res) => res.status(201).json(await auth.createUser(newUserSchema.parse(req.body), actorFrom(res), (await settings.current()).configuracion.datosDemostracion)));
   privateApi.patch("/usuarios/:id", async (req, res) => res.json(await auth.updateUser(uuid.parse(req.params.id), userChangesSchema.parse(req.body), actorFrom(res))));

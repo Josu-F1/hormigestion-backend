@@ -4,6 +4,9 @@ import { writeFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
 import type { Server } from "node:http";
 import jwt from "jsonwebtoken";
+import { Decimal } from "decimal.js";
+import { seedReportDemo } from "../../src/infrastructure/database/seed-report-demo.js";
+import { localDate } from "../../src/domain/reporteria.js";
 import { createApp } from "../../src/app.js";
 import { loadEnv } from "../../src/infrastructure/env.js";
 import { createPool } from "../../src/infrastructure/database/pool.js";
@@ -233,4 +236,92 @@ test("login aplica límite de solicitudes en el servidor", async () => {
     const result = await fetch(`http://127.0.0.1:${address.port}/api/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     assert.equal(result.status, 429); assert.ok(result.headers.get("retry-after")); await result.arrayBuffer();
   } finally { await new Promise<void>((resolve) => limited.close(() => resolve())); }
+});
+
+test("reportería exige administrador, tanto JSON como CSV", async () => {
+  for (const path of ["/api/v1/admin/reportes", "/api/v1/admin/reportes/exportar.csv"]) {
+    assert.equal((await call(path)).status, 401);
+    assert.equal((await call(path, "GET", undefined, tokens.despacho)).status, 403);
+    assert.equal((await call(path, "GET", undefined, tokens.calidad)).status, 403);
+  }
+});
+test("cabeceras y detalles se consolidan sin duplicar cotizaciones mixtas", async () => {
+  const before = await call("/api/v1/admin/reportes", "GET", undefined, tokens.admin);
+  assert.equal(before.status, 200);
+  const input = creationInput();
+  input.detalles.push({ ...input.detalles[0]!, resistenciaCodigo: "FC-240" });
+  const created = await call("/api/v1/cotizaciones", "POST", input, undefined, { "Idempotency-Key": randomUUID() });
+  assert.equal(created.status, 201);
+  const after = await call("/api/v1/admin/reportes", "GET", undefined, tokens.admin);
+  assert.equal(after.status, 200);
+  assert.equal(after.data.indicadores.cotizaciones, before.data.indicadores.cotizaciones + 1);
+  assert.equal(new Decimal(after.data.indicadores.volumenM3).minus(before.data.indicadores.volumenM3).toFixed(6), created.data.cotizacion.calculo.volumenTotalM3);
+  assert.equal(new Decimal(after.data.indicadores.valorHormigon).minus(before.data.indicadores.valorHormigon).toFixed(2), created.data.cotizacion.calculo.subtotalHormigon);
+  assert.equal(after.data.demanda.resistencias.reduce((sum: Decimal, row: any) => sum.plus(row.volumenM3), new Decimal(0)).toFixed(6), new Decimal(after.data.indicadores.volumenM3).toFixed(6));
+  const filtered = await call("/api/v1/admin/reportes?resistencia=FC-240&zona=AMBATO-HUACHI", "GET", undefined, tokens.admin);
+  assert.equal(filtered.status, 200);
+  assert.equal(filtered.data.indicadores.cotizaciones, 1);
+  assert.equal(Number(filtered.data.indicadores.volumenM3), 5.3);
+  assert.equal(filtered.data.demanda.zonas[0].codigo, "AMBATO-HUACHI");
+});
+test("orígenes reales y demo permanecen separados y agregados no exponen contactos", async () => {
+  const created = await call("/api/v1/cotizaciones", "POST", creationInput(), undefined, { "Idempotency-Key": randomUUID() });
+  // Fixture REAL únicamente en esta base temporal de pruebas.
+  await adminDb.query("UPDATE cotizaciones SET datos_demostracion=false WHERE id=$1", [created.data.cotizacion.id]);
+  const real = await call("/api/v1/admin/reportes?origen=REAL", "GET", undefined, tokens.admin);
+  assert.equal(real.status, 200); assert.equal(real.data.indicadores.cotizaciones, 1); assert.equal(real.data.datosDemostracion, false);
+  const demo = await call("/api/v1/admin/reportes?origen=DEMO", "GET", undefined, tokens.admin);
+  assert.equal(demo.status, 200); assert.equal(demo.data.datosDemostracion, true);
+  const text = JSON.stringify(demo.data);
+  assert.equal(text.includes("telefono"), false); assert.equal(text.includes("email"), false); assert.equal(text.includes("tokenComprobante"), false);
+  const empty = await call("/api/v1/admin/reportes?desde=2000-01-01&hasta=2000-01-07", "GET", undefined, tokens.admin);
+  assert.equal(empty.status, 200); assert.equal(empty.data.indicadores.cotizaciones, 0); assert.equal(empty.data.demanda.diarios.length, 7);
+});
+test("reportería valida fechas, parámetros inesperados y códigos", async () => {
+  for (const query of ["desde=2026-02-30", "desde=2026-10-03&hasta=2026-10-01", "desde=2024-01-01&hasta=2026-01-01", "origen=TODOS", "limit=1"]) assert.equal((await call(`/api/v1/admin/reportes?${query}`, "GET", undefined, tokens.admin)).status, 400);
+  assert.equal((await call("/api/v1/admin/reportes?zona=NO-EXISTE", "GET", undefined, tokens.admin)).status, 422);
+  assert.equal((await call("/api/v1/admin/reportes?resistencia=FC-999", "GET", undefined, tokens.admin)).status, 422);
+});
+test("historial sintético es idempotente, conserva datos y no emite notificaciones", async () => {
+  const before = (await adminDb.query("SELECT count(*)::int AS n FROM eventos_salida")).rows[0].n;
+  const oldQuote = (await call(`/api/v1/cotizaciones/${quoteId}/comprobante`, "GET", undefined, tokens.admin)).data;
+  assert.equal(await seedReportDemo(adminDb, now), 198);
+  assert.equal(await seedReportDemo(adminDb, new Date(now.getTime() + 86400000)), 0);
+  assert.equal((await adminDb.query("SELECT count(*)::int AS n FROM eventos_salida")).rows[0].n, before);
+  assert.equal((await call(`/api/v1/cotizaciones/${quoteId}/comprobante`, "GET", undefined, tokens.admin)).data.calculo.total, oldQuote.calculo.total);
+});
+test("proyección y pulso semanal usan semanas cerradas y totales reconciliados", async () => {
+  const result = await call("/api/v1/admin/reportes", "GET", undefined, tokens.admin);
+  assert.equal(result.status, 200);
+  const projection = result.data.proyeccion;
+  assert.equal(projection.estado, "DISPONIBLE"); assert.equal(projection.semanasHistoricas, 11); assert.equal(projection.semanas.length, 4);
+  assert.ok(projection.historial.every((item: any) => item.desde < result.data.alertaSemanal.desde));
+  const sum = projection.resistencias.reduce((value: Decimal, item: any) => value.plus(item.estimadoM3), new Decimal(0)).toFixed(3);
+  assert.equal(projection.semanas[0].estimadoM3, sum);
+  assert.equal(projection.zonas.reduce((value: Decimal, item: any) => value.plus(item.estimadoM3), new Decimal(0)).toFixed(3), sum);
+  assert.ok(projection.resistencias.every((item: any) => item.evaluacion.semanasPrueba === 7 && Number.isFinite(Number(item.evaluacion.rmseM3))));
+  assert.ok(result.data.alertaSemanal.avisos.some((item: any) => item.codigo === "DATOS_DEMO"));
+});
+test("CSV administrativo es un archivo filtrado, sin registros de contacto", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/admin/reportes/exportar.csv?resistencia=FC-210`, { headers: { Authorization: `Bearer ${tokens.admin}` } });
+  assert.equal(response.status, 200); assert.ok(response.headers.get("content-type")?.includes("text/csv"));
+  const csv = await response.text(); assert.ok(csv.includes('"Resistencia";"FC-210"')); assert.equal(csv.includes('"Resistencia";"FC-350"'), false);
+  assert.equal(csv.includes("0990000000"), false); assert.equal(csv.includes("historial@example.invalid"), false);
+});
+test("fecha local y vencimiento de cotizaciones coinciden con las reglas comerciales", async () => {
+  const before = now;
+  try {
+    now = new Date("2026-10-05T04:59:59Z");
+    const created = await call("/api/v1/cotizaciones", "POST", creationInput(), undefined, { "Idempotency-Key": randomUUID() });
+    assert.equal(created.status, 201);
+    assert.equal(localDate(now, "America/Guayaquil"), "2026-10-04");
+    const sunday = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
+    assert.equal(sunday.status, 200); assert.equal(sunday.data.indicadores.cotizaciones, 1); assert.equal(sunday.data.alertaSemanal.desde, "2026-09-28");
+    now = new Date("2026-10-05T05:00:00Z");
+    const monday = await call("/api/v1/admin/reportes?desde=2026-10-05&hasta=2026-10-05", "GET", undefined, tokens.admin);
+    assert.equal(monday.status, 200); assert.equal(monday.data.indicadores.cotizaciones, 0); assert.equal(monday.data.alertaSemanal.desde, "2026-10-05");
+    now = new Date(created.data.cotizacion.validaHasta);
+    const expired = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
+    assert.equal(expired.data.indicadores.vencidas, 1); assert.equal(expired.data.indicadores.pendientes, 0);
+  } finally { now = before; }
 });

@@ -1,6 +1,6 @@
 # HormiGestión Backend
 
-Estado al 3 de octubre de 2026: primer incremento funcional con Node.js 24 LTS, TypeScript, Express 5 y PostgreSQL 16. Incluye configuración editable/versionada, acceso por roles, catálogos, cálculo/registro de cotizaciones y comprobante privado/PDF.
+Estado al 3 de octubre de 2026: backend funcional con Node.js 24 LTS, TypeScript, Express 5 y PostgreSQL 16. Incluye configuración editable/versionada, acceso por roles, catálogos, cálculo/registro de cotizaciones, comprobante privado/PDF y módulo administrativo de reportería/proyección estadística.
 
 Se revisaron el acta, el entregable de diseño, el informe previo, el SQL disponible y el frontend para establecer una base común antes de implementar.
 
@@ -11,10 +11,11 @@ Se revisaron el acta, el entregable de diseño, el informe previo, el SQL dispon
 - [Operación de hormigoneras y ajustes del dominio](docs/03-operacion-hormigon-y-ajustes.md): investigación con fuentes primarias, confirmación de pedidos, agenda, recepción, calidad y reglas afinadas para backend/frontend.
 - [Skills instaladas](docs/04-skills-instaladas.md): herramientas de asistencia para Node.js, PostgreSQL, React, seguridad y pruebas de navegador, con procedencia y versiones verificadas.
 - [Datos demo y primer incremento](docs/05-datos-demo-y-primer-incremento.md): supuestos autorizados, parámetros editables, API y verificación de la implementación.
+- [Dashboard y reportería](docs/06-dashboard-y-reporteria.md): agregación de cotizaciones, demanda por resistencia/zona, proyección estadística, pulso semanal, CSV y semilla histórica ficticia.
 
 ## Conclusión de la revisión
 
-El diseño está parcialmente alineado con el acta. Cotización y logística tienen una base aprovechable. La trazabilidad de calidad está modelada en datos, pero falta completar sus casos de uso, permisos y pantallas. La proyección automática de demanda comprometida en el acta aún no tiene un diseño funcional completo.
+La revisión inicial encontró alineación parcial con el acta. Cotización y logística tenían una base aprovechable. La trazabilidad de calidad está modelada en datos, pero falta completar sus casos de uso, permisos y pantallas. El módulo 3.5 añade una base funcional de proyección sobre cotizaciones; integrar despachos y validar la demanda efectiva contemplada en el acta sigue pendiente.
 
 La tecnología documentada es Node.js, PostgreSQL y Docker, con una API REST organizada en dominio, aplicación e infraestructura. Las reglas contradictorias de precios, flete, desperdicio, capacidad, estados y cronómetro se registran como decisiones por resolver en la documentación.
 
@@ -89,6 +90,8 @@ npm run test:integration
 npm run build
 ```
 
-Las pruebas integradas crean una base temporal propia y la eliminan al terminar; conservan los datos de desarrollo. Requieren la cuenta de migración del `.env`. Verificación: **15 pruebas de reglas y 18 de integración** sobre Node.js 24 y PostgreSQL 16, más build e imagen Docker. El PDF de muestra se revisó visualmente con fuentes incorporadas.
+Las pruebas integradas crean una base temporal propia y la eliminan al terminar; conservan los datos de desarrollo. Requieren la cuenta de migración del `.env`. Verificación: **23 pruebas de reglas y 26 de integración**, además de typecheck/build e imagen Docker con Node.js 24/PostgreSQL 16. El PDF de muestra se revisó visualmente con fuentes incorporadas.
 
-Siguen en el plan: pedidos/reservas, despacho/cronómetro, calidad/ensayos, pronóstico semanal, integración del frontend, entrega de eventos a n8n y recuperación operativa. El evento de solicitud ya se guarda en PostgreSQL; el worker de notificaciones está pendiente. El frontend continúa con datos de demostración hasta integrar esta API.
+El frontend del catálogo y del módulo administrativo ya consume esta API. `GET /api/v1/admin/reportes` y `/api/v1/admin/reportes/exportar.csv` requieren administrador. Para incorporar 198 cotizaciones ficticias de historia semanal, ejecutar `npm run db:seed:reportes` o el comando Docker indicado en la guía; la semilla conserva los registros anteriores y es idempotente.
+
+Siguen en el plan: pedidos/reservas, despacho/cronómetro, calidad/ensayos, pronóstico validado con despachos, entrega de eventos a n8n y recuperación operativa. El evento de solicitud ya se guarda en PostgreSQL; el worker de notificaciones está pendiente. La alerta semanal del panel se calcula al consultarlo y no envía mensajes externos.

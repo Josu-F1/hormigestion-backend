@@ -12,6 +12,7 @@
     "start": "node dist/server.js",
     "db:migrate": "tsx src/infrastructure/database/migrate.ts",
     "db:seed:demo": "tsx src/infrastructure/database/seed-demo.ts",
+    "db:seed:reportes": "tsx src/infrastructure/database/seed-report-demo.ts",
     "db:migrate:prod": "node dist/infrastructure/database/migrate.js",
     "test": "node --import tsx --test --test-isolation=none tests/unit/*.test.ts",
     "test:integration": "tsx scripts/test-integration.ts"
