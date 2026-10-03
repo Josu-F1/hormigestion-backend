@@ -1,6 +1,8 @@
 # Preparación del backend de HormiGestión
 
-Fecha: 3 de octubre de 2026. Estado: plan general; primer incremento implementado con supuestos demo autorizados. Véase [el estado y los datos actuales](05-datos-demo-y-primer-incremento.md).
+Fecha: 3 de octubre de 2026. Estado: plan general de referencia, con incrementos posteriores de base/cotización y reportería. El inventario vigente está en [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md); los supuestos editables, en [datos demo](05-datos-demo-y-primer-incremento.md).
+
+> Las entidades, rutas y etapas propuestas aquí no equivalen a operaciones ya disponibles. Contrastar con el inventario y con `/api/v1/openapi.json` antes de implementar o integrar. Las conclusiones de la auditoría se refieren al diseño original.
 
 ## 1. Base de alcance
 

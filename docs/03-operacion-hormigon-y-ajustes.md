@@ -2,6 +2,8 @@
 
 Investigación: 3 de octubre de 2026. Estado: referencia de dominio; la base técnica y cotización ya se implementaron con datos demo configurables. Complementa [la auditoría](01-auditoria-alineacion.md), [el plan general](02-preparacion-backend.md) y [el estado del incremento](05-datos-demo-y-primer-incremento.md).
 
+> Las reglas operativas y estructuras propuestas sirven de diseño para módulos futuros. El [inventario vigente](ESTADO_DEL_PROYECTO.md) identifica cuáles tienen implementación y cuáles conservan solo parámetros preparados. Las condiciones de otras empresas no son condiciones confirmadas de Hormigonera Tungurahua.
+
 ## 1. Conclusión y criterio de uso
 
 HormiGestión debe gestionar una cadena de solicitud, confirmación comercial, programación, cargas y entregas, seguida por controles y ensayos. El pedido y el viaje son entidades diferentes; la disponibilidad y la calidad requieren evidencia propia.

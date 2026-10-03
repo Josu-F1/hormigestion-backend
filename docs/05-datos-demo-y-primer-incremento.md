@@ -2,6 +2,8 @@
 
 Fecha: 3 de octubre de 2026. El usuario autoriza usar datos ficticios plausibles y dejar los parámetros editables para continuar el proyecto. Estos supuestos permiten avanzar en desarrollo; su verificación con la empresa queda para reemplazar la demostración por operación real.
 
+La descripción comercial corresponde al primer incremento; la tabla de alcance y verificación incluye también la reportería añadida después. Consultar [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md) para la entrega vigente y [CONTRIBUTING.md](../CONTRIBUTING.md) para integraciones del equipo.
+
 ## 1. Datos iniciales y procedencia
 
 Las cinco resistencias provienen del acta. Las tarifas base y zonas se inspiran en el SQL entregado; no son un estudio de precios de mercado. Los demás números son supuestos sintéticos de desarrollo. Nombres de personal, placas y contactos son ficticios.
@@ -113,18 +115,18 @@ Transiciones: `PENDIENTE → CONTACTADA → APROBADA`; rechazo desde pendiente/c
 | BE-03 Cotización | Cálculo, registro idempotente, snapshot histórico, comprobante/PDF y transiciones comerciales |
 | BE-04/05 Logística | Parámetros preparados; pedidos, reservas, asignación y cronómetro pendientes |
 | BE-06 Calidad | Parámetros preparados; controles, muestreos, probetas, roturas y dossier pendientes |
-| BE-07 Proyección | Pendiente; no se simula una predicción como resultado real |
+| BE-07 Proyección | Reportería y proyección estadística de cotizaciones implementadas; evaluación con pedidos/despachos reales pendiente. Véase [módulo 3.5](06-dashboard-y-reporteria.md) |
 | BE-08 Operación | Pool, migraciones/checksum, usuario limitado, logs, salud, cierre ordenado y outbox; worker n8n, respaldo/restauración y producción pendientes |
-| Frontend | Sin cambios; integración y formularios administrativos pendientes |
+| Frontend | Sitio/catálogo y dashboard/reportería integrados; cotizador, edición de configuración/personal y módulos operativos pendientes. Véase [estado del frontend](../../hormigestion-frontend/docs/ESTADO_DEL_PROYECTO.md) |
 
 No se ejecutó el DDL destructivo. `001_base.sql` crea las entidades de este incremento; el resto se añade con migraciones nuevas. La cuenta de aplicación carece de permisos de borrado, DDL y modificación de versiones históricas.
 
 ## 6. Verificación
 
-- 15 pruebas de reglas: geometrías, redondeos, flete, bombeo, tarifas, rangos y configuración.
-- 18 pruebas integradas con PostgreSQL real: permisos/JWT, cuentas inactivas, reintentos concurrentes, outbox/rollback, snapshots, revisión concurrente, estados/vigencia, PDF, CORS, JSON inválido y límite de login.
+- 23 pruebas de reglas: geometrías, redondeos, flete, bombeo, tarifas, rangos, configuración, agregación y proyección.
+- 26 pruebas integradas con PostgreSQL real: permisos/JWT, cuentas inactivas, reintentos concurrentes, outbox/rollback, snapshots, revisión concurrente, estados/vigencia, PDF, CORS, JSON inválido, límite de login, filtros/reportes, CSV y semilla histórica.
 - Node.js 24 LTS y PostgreSQL 16; TypeScript y build de Docker correctos.
 - PDF extraído y revisado visualmente; fuentes Liberation Sans incorporadas con su licencia.
-- Base de pruebas temporal eliminada; secretos/artefactos locales excluidos de Git; documentos originales y frontend conservados.
+- Base de pruebas temporal eliminada; secretos/artefactos locales excluidos de Git; documentos originales conservados. La integración del frontend se documenta en su propio repositorio.
 
 Estas pruebas verifican el incremento implementado. El contrato de rutas existentes está en `GET /api/v1/openapi.json` y [openapi.ts](../src/infrastructure/openapi.ts).

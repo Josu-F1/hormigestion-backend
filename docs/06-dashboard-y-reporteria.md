@@ -2,6 +2,8 @@
 
 Incremento del 3 de octubre de 2026. Implementa el módulo 3.5 con datos agregados de cotizaciones, proyección estadística y pulso semanal. El frontend consume la API real; no mantiene otra fuente de métricas.
 
+Para el alcance general, APIs preparadas y módulos pendientes, consultar [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md). La guía de arranque/colaboración está en [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## API y autorización
 
 | Método/ruta | Respuesta |
@@ -66,7 +68,7 @@ docker compose run --rm seed-demo
 docker compose run --rm api node dist/infrastructure/database/seed-report-demo.js
 ```
 
-La última operación requiere `DEMO_ENABLED=true`, configuración demostrativa y entorno distinto de producción. Incorpora 198 cotizaciones ficticias, con contactos explícitamente no reales, volúmenes variables, varios estados y mezcla de resistencias/zonas. Usa un bloqueo transaccional y marcador de auditoría `reporteria-demo-v1`; repetirla no duplica ni restaura registros anteriores. No crea pedidos, despachos, reservas o eventos externos. Su historia se ancla a la fecha de la primera ejecución; no se regenera al cambiar de semana.
+La última operación requiere `DEMO_MODE=true`, configuración demostrativa y entorno distinto de producción. Incorpora 198 cotizaciones ficticias, con contactos explícitamente no reales, volúmenes variables, varios estados y mezcla de resistencias/zonas. Usa un bloqueo transaccional y marcador de auditoría `reporteria-demo-v1`; repetirla no duplica ni restaura registros anteriores. No crea pedidos, despachos, reservas o eventos externos. Su historia se ancla a la fecha de la primera ejecución; no se regenera al cambiar de semana.
 
 ## CSV
 
@@ -76,4 +78,4 @@ Archivo UTF-8 con BOM, separador `;`, celdas entre comillas y saltos CRLF. Se pr
 
 23 pruebas de reglas y 26 de integración, typecheck/build e imagen Docker con Node.js 24/PostgreSQL 16. Casos administrativos: 401/403, agregación de cotizaciones mixtas, filtros combinados, DEMO/REAL, errores de consulta, resultado vacío, histórico/proyección reconciliados, exportación sin información de contacto, frontera semanal local y expiración inclusiva. La semilla se prueba dos veces, preservando datos anteriores y verificando ausencia de eventos ficticios. Las pruebas usan una base temporal y no borran el volumen de desarrollo.
 
-La guía del frontend es `../hormigestion-frontend/docs/02-modulo-administrativo.md`. Para integrar operaciones futuras, añadir repositorios de pedidos/despachos y su relación con cotización, conservar el origen DEMO/REAL y ampliar las fuentes/evaluación del pronóstico. No reutilizar cotizaciones como si fueran producción ejecutada.
+La [guía del frontend](../../hormigestion-frontend/docs/02-modulo-administrativo.md) documenta su interfaz. Para integrar operaciones futuras, añadir repositorios de pedidos/despachos y su relación con cotización, conservar el origen DEMO/REAL y ampliar las fuentes/evaluación del pronóstico. No reutilizar cotizaciones como si fueran producción ejecutada.

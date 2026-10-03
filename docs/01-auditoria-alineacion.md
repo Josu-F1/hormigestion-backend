@@ -2,6 +2,8 @@
 
 Fecha: 3 de octubre de 2026.
 
+> **Antecedente de diseño, anterior a la implementación.** El dictamen y las observaciones del repositorio describen la situación encontrada en la revisión inicial. Desde entonces se implementaron la base, cotización y reportería/proyección, además de los módulos cliente y administrativo del frontend. Para decidir qué falta hoy, consultar [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md); conservar esta auditoría como evidencia de las diferencias originales entre entregables.
+
 ## 1. Dictamen
 
 **El Documento_Entregable está parcialmente alineado con el Acta_de_Constitucion, pero todavía no constituye una especificación integrada lista para implementar todas las reglas de negocio.**

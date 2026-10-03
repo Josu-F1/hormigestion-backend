@@ -2,12 +2,18 @@
 
 Estado al 3 de octubre de 2026: backend funcional con Node.js 24 LTS, TypeScript, Express 5 y PostgreSQL 16. Incluye configuración editable/versionada, acceso por roles, catálogos, cálculo/registro de cotizaciones, comprobante privado/PDF y módulo administrativo de reportería/proyección estadística.
 
+## Entrada para el equipo
+
+Antes de añadir o reemplazar un módulo, leer el [estado vigente del proyecto](docs/ESTADO_DEL_PROYECTO.md): funcionalidades terminadas, API disponible sin interfaz, pendientes, permisos y archivos que deben reutilizarse. [CONTRIBUTING.md](CONTRIBUTING.md) explica instalación, migraciones, colaboración y comprobaciones; [AGENTS.md](AGENTS.md) orienta también a los asistentes de código.
+
+El sitio/catálogo y el dashboard del frontend ya están conectados. Cotizador, edición administrativa, pedidos/despacho y calidad tienen distintos grados de preparación: consultar el inventario antes de asumir que están hechos o que faltan por completo.
+
 Se revisaron el acta, el entregable de diseño, el informe previo, el SQL disponible y el frontend para establecer una base común antes de implementar.
 
 ## Documentación de preparación
 
-- [Auditoría de alineación y coherencia](docs/01-auditoria-alineacion.md): evidencias por página, cobertura del acta, contradicciones entre entregables y observaciones sobre el SQL y el prototipo.
-- [Plan de preparación e implementación del backend](docs/02-preparacion-backend.md): módulos, decisiones pendientes, cambios de datos, propuesta de API, orden de trabajo y criterios de aceptación.
+- [Auditoría de alineación y coherencia](docs/01-auditoria-alineacion.md): antecedente de la revisión del diseño, previo a los incrementos funcionales.
+- [Plan de preparación e implementación del backend](docs/02-preparacion-backend.md): plan y propuestas; no es el inventario de endpoints implementados.
 - [Operación de hormigoneras y ajustes del dominio](docs/03-operacion-hormigon-y-ajustes.md): investigación con fuentes primarias, confirmación de pedidos, agenda, recepción, calidad y reglas afinadas para backend/frontend.
 - [Skills instaladas](docs/04-skills-instaladas.md): herramientas de asistencia para Node.js, PostgreSQL, React, seguridad y pruebas de navegador, con procedencia y versiones verificadas.
 - [Datos demo y primer incremento](docs/05-datos-demo-y-primer-incremento.md): supuestos autorizados, parámetros editables, API y verificación de la implementación.
@@ -21,7 +27,7 @@ La tecnología documentada es Node.js, PostgreSQL y Docker, con una API REST org
 
 El archivo `../hormigestion_db_schema(1).sql` es una referencia de diseño con una sección de limpieza destructiva. Debe transformarse en migraciones incrementales antes de usarlo sobre una base con información.
 
-Los PDF, el SQL original y el frontend se conservaron sin modificaciones durante esta revisión.
+Durante la revisión inicial se conservaron los PDF, el SQL original y el boceto del frontend. Después se implementaron los módulos cliente y administrativo; su [estado actual](../hormigestion-frontend/docs/ESTADO_DEL_PROYECTO.md) documenta la integración.
 
 La investigación posterior mantiene los 90 minutos del acta como política del proyecto, con alerta temporal separada del dictamen de calidad. El plan distingue muestreo, probeta y rotura, y contempla el ciclo completo de los recursos y el balance de recepción por viaje.
 
