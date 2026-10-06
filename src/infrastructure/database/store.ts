@@ -135,9 +135,34 @@ export class PgStore implements ConfigurationRepository, UserRepository, Quotati
     const result = await this.pool.query<QuoteRow>("SELECT snapshot,estado,version,token_acceso_hash FROM cotizaciones WHERE id=$1", [id]);
     return result.rows[0] ? quoteFrom(result.rows[0]) : null;
   }
-  async quotations(limit: number, offset: number) {
-    const result = await this.pool.query<QuoteRow>("SELECT snapshot,estado,version,token_acceso_hash FROM cotizaciones ORDER BY creado_en DESC,id LIMIT $1 OFFSET $2", [limit, offset]);
-    return result.rows.map((row) => quoteFrom(row).cotizacion);
+  async quotations(limit: number, offset: number, filters?: { estado?: QuotationState; q?: string }) {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (filters?.estado) {
+      params.push(filters.estado);
+      const idx = params.length;
+      if (filters.estado === "VENCIDA") {
+        conditions.push(`((estado IN ('PENDIENTE', 'CONTACTADA') AND valida_hasta <= NOW()) OR estado = $${idx})`);
+      } else if (filters.estado === "PENDIENTE" || filters.estado === "CONTACTADA") {
+        conditions.push(`(estado = $${idx} AND valida_hasta > NOW())`);
+      } else {
+        conditions.push(`estado = $${idx}`);
+      }
+    }
+    if (filters?.q) {
+      params.push(`%${filters.q}%`);
+      const idx = params.length;
+      conditions.push(`(codigo ILIKE $${idx} OR snapshot->'contacto'->>'nombre' ILIKE $${idx} OR snapshot->'contacto'->>'telefono' ILIKE $${idx} OR snapshot->'contacto'->>'email' ILIKE $${idx} OR snapshot->'obra'->>'direccion' ILIKE $${idx})`);
+    }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const countResult = await this.pool.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM cotizaciones${whereClause}`, params);
+    const total = parseInt(countResult.rows[0]?.count ?? "0", 10);
+    params.push(limit, offset);
+    const limitIdx = params.length - 1;
+    const offsetIdx = params.length;
+    const dataQuery = `SELECT snapshot,estado,version,token_acceso_hash FROM cotizaciones${whereClause} ORDER BY creado_en DESC,id LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+    const result = await this.pool.query<QuoteRow>(dataQuery, params);
+    return { items: result.rows.map((row) => quoteFrom(row).cotizacion), total };
   }
   async changeQuotationState(id: string, target: QuotationState, expectedVersion: number, reason: string, actor: Actor, now: Date) {
     return transaction(this.pool, async (client) => {

@@ -39,7 +39,7 @@ Todas las rutas de esta tabla llevan el prefijo `/api/v1`. Las rutas privadas us
 | `GET /usuarios`, `POST /usuarios`, `PATCH /usuarios/:id` | ADMINISTRADOR | Gestión de personal |
 | `GET /admin/configuracion`, `PUT /admin/configuracion`, `GET /admin/configuracion/historial` | ADMINISTRADOR | Configuración completa y revisiones |
 | `GET /mixers` | ADMINISTRADOR/DESPACHADOR | Flota administrativa, sin agenda |
-| `GET /cotizaciones` | ADMINISTRADOR/DESPACHADOR | Listado con `limit`/`offset` |
+| `GET /cotizaciones` | ADMINISTRADOR/DESPACHADOR | Listado con `limit`/`offset`, filtros por `estado` y búsqueda por `q` (código, cliente, teléfono, dirección), con conteo total |
 | `POST /cotizaciones/:id/contactar`, `/cotizaciones/:id/aprobar`, `/cotizaciones/:id/rechazar` | ADMINISTRADOR/DESPACHADOR | Transiciones con `versionEsperada` y `motivo` |
 | `GET /admin/reportes`, `GET /admin/reportes/exportar.csv` | ADMINISTRADOR | Reportería y exportación filtradas |
 

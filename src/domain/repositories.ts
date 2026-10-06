@@ -22,6 +22,6 @@ export interface UserRepository {
 export interface QuotationRepository {
   createQuotation(keyHash: string, inputHash: string, build: (config: VersionedConfiguration) => SavedQuotation): Promise<{ cotizacion: Quotation; replayed: boolean }>;
   quotation(id: string): Promise<SavedQuotation | null>;
-  quotations(limit: number, offset: number): Promise<Quotation[]>;
+  quotations(limit: number, offset: number, filters?: { estado?: QuotationState; q?: string }): Promise<{ items: Quotation[]; total: number }>;
   changeQuotationState(id: string, target: QuotationState, expectedVersion: number, reason: string, actor: Actor, now: Date): Promise<Quotation>;
 }

@@ -21,6 +21,7 @@ import { reportFiltersSchema } from "./domain/reporteria.js";
 const uuid = z.uuid();
 const changeStateSchema = z.strictObject({ versionEsperada: z.int().positive(), motivo: z.string().trim().min(5).max(500) });
 const paginationSchema = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20), offset: z.coerce.number().int().min(0).max(100000).default(0) });
+const quoteQuerySchema = paginationSchema.extend({ estado: z.enum(["PENDIENTE", "CONTACTADA", "APROBADA", "RECHAZADA", "VENCIDA"]).optional(), q: z.string().trim().max(100).optional() });
 const keySchema = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i, "Idempotency-Key debe ser un UUID v4 nuevo para cada solicitud");
 
 function bearer(req: Request) {
@@ -114,8 +115,9 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   });
   privateApi.get("/mixers", async (_req, res) => { requireRole(actorFrom(res), ["ADMINISTRADOR", "DESPACHADOR"]); const current = await settings.current(); res.json({ versionConfiguracion: current.version, data: current.configuracion.mixers }); });
   privateApi.get("/cotizaciones", async (req, res) => {
-    const paging = paginationSchema.parse(req.query);
-    res.json({ ...paging, data: await quotes.list(actorFrom(res), paging.limit, paging.offset) });
+    const query = quoteQuerySchema.parse(req.query);
+    const result = await quotes.list(actorFrom(res), query.limit, query.offset, { estado: query.estado, q: query.q });
+    res.json({ limit: query.limit, offset: query.offset, total: result.total, data: result.data });
   });
   for (const [action, state] of [["contactar", "CONTACTADA"], ["aprobar", "APROBADA"], ["rechazar", "RECHAZADA"]] as const) {
     privateApi.post(`/cotizaciones/:id/${action}`, async (req, res) => {
