@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { roles, type Actor, type Configuration } from "../domain/configuracion.js";
-import { calculateQuotation, stateAt, type CalculationInput, type CreateQuotationInput, type Quotation } from "../domain/cotizacion.js";
+import { calculateQuotation, stateAt, type CalculationInput, type CreateQuotationInput, type Quotation, type QuotationState } from "../domain/cotizacion.js";
 import { AppError } from "../domain/errors.js";
 import type { ConfigurationRepository, UserRepository, QuotationRepository } from "../domain/repositories.js";
 
@@ -101,9 +101,10 @@ export class QuotationService {
     }
     return { ...saved.cotizacion, estado: stateAt(saved.cotizacion, this.clock()) };
   }
-  async list(actor: Actor, limit: number, offset: number) {
+  async list(actor: Actor, limit: number, offset: number, filters?: { estado?: QuotationState; q?: string }) {
     requireRole(actor, ["ADMINISTRADOR", "DESPACHADOR"]);
-    return (await this.quotes.quotations(limit, offset)).map((quote) => ({ ...quote, estado: stateAt(quote, this.clock()) }));
+    const res = await this.quotes.quotations(limit, offset, filters);
+    return { total: res.total, data: res.items.map((quote) => ({ ...quote, estado: stateAt(quote, this.clock()) })) };
   }
   async changeState(id: string, target: "CONTACTADA" | "APROBADA" | "RECHAZADA", expectedVersion: number, reason: string, actor: Actor) {
     requireRole(actor, ["ADMINISTRADOR", "DESPACHADOR"]);
