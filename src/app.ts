@@ -17,6 +17,9 @@ import { openApi } from "./infrastructure/openapi.js";
 import { ReportService } from "./application/report-service.js";
 import { PgReportStore } from "./infrastructure/database/report-store.js";
 import { reportFiltersSchema } from "./domain/reporteria.js";
+import { DespachoService } from "./application/despacho-service.js";
+import { PgDespachoStore } from "./infrastructure/database/despacho-store.js";
+import { asignarMixerSchema } from "./domain/despacho.js";
 
 const uuid = z.uuid();
 const changeStateSchema = z.strictObject({ versionEsperada: z.int().positive(), motivo: z.string().trim().min(5).max(500) });
@@ -39,6 +42,7 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   const settings = new ConfigurationService(repository);
   const quotes = new QuotationService(repository, repository, auth, env.COMPROBANTE_SECRET, options.clock);
   const reports = new ReportService(new PgReportStore(pool), options.clock);
+  const despachos = new DespachoService(new PgDespachoStore(pool), options.clock);
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", false);
@@ -114,6 +118,28 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
     res.json(await settings.update(input.configuracion, input.versionEsperada, input.motivo, actorFrom(res)));
   });
   privateApi.get("/mixers", async (_req, res) => { requireRole(actorFrom(res), ["ADMINISTRADOR", "DESPACHADOR"]); const current = await settings.current(); res.json({ versionConfiguracion: current.version, data: current.configuracion.mixers }); });
+  privateApi.get("/conductores", async (_req, res) => { res.json({ data: await despachos.conductoresDisponibles(actorFrom(res)) }); });
+  privateApi.get("/conductor/despacho", async (_req, res) => {
+    res.json({ data: await despachos.despachoDelConductor(actorFrom(res)) });
+  });
+
+  // ── Módulo Despachos (Control en el Mixer) ──────────────────────────
+  privateApi.post("/despachos/asignar", async (req, res) => {
+    const input = asignarMixerSchema.parse(req.body);
+    res.status(201).json(await despachos.asignarMixerViaje(input, actorFrom(res)));
+  });
+  privateApi.post("/despachos/:id/iniciar-transito", async (req, res) => {
+    res.json(await despachos.iniciarTransito(uuid.parse(req.params.id), actorFrom(res)));
+  });
+  privateApi.post("/despachos/:id/iniciar-por-conductor", async (req, res) => {
+    res.json(await despachos.iniciarTransitoComoConductor(uuid.parse(req.params.id), actorFrom(res)));
+  });
+  privateApi.post("/despachos/:id/registrar-llegada", async (req, res) => {
+    res.json(await despachos.registrarLlegadaComoConductor(uuid.parse(req.params.id), actorFrom(res)));
+  });
+  privateApi.get("/despachos/activos", async (_req, res) => {
+    res.json({ data: await despachos.viajesActivos(actorFrom(res)) });
+  });
   privateApi.get("/cotizaciones", async (req, res) => {
     const query = quoteQuerySchema.parse(req.query);
     const result = await quotes.list(actorFrom(res), query.limit, query.offset, { estado: query.estado, q: query.q });
