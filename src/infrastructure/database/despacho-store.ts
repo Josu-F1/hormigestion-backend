@@ -13,6 +13,8 @@ type DespachoRow = {
   hora_salida: Date | null;
   hora_llegada: Date | null;
   llegada_por_usuario_id: string | null;
+  hora_retorno: Date | null;
+  retorno_por_usuario_id: string | null;
   estado: DespachoRecord["estado"];
   iniciado_por_usuario_id: string | null;
   iniciado_en: Date | null;
@@ -29,6 +31,8 @@ const despachoFrom = (row: DespachoRow): DespachoRecord => ({
   horaSalida: row.hora_salida?.toISOString() ?? null,
   horaLlegada: row.hora_llegada?.toISOString() ?? null,
   llegadaPorUsuarioId: row.llegada_por_usuario_id,
+  horaRetorno: row.hora_retorno?.toISOString() ?? null,
+  retornoPorUsuarioId: row.retorno_por_usuario_id,
   estado: row.estado,
   iniciadoPorUsuarioId: row.iniciado_por_usuario_id,
   iniciadoEn: row.iniciado_en?.toISOString() ?? null,
@@ -114,9 +118,11 @@ export class PgDespachoStore implements DespachoRepository {
       `SELECT d.*
        FROM despachos d
        JOIN conductores c ON c.id = d.conductor_id
-       WHERE c.usuario_id = $1 AND d.estado IN ('PENDIENTE', 'EN_TRANSITO', 'EN_OBRA')
-       ORDER BY d.creado_en ASC
-       LIMIT 1`,
+      WHERE c.usuario_id = $1
+        AND d.estado IN ('PENDIENTE', 'EN_TRANSITO', 'EN_OBRA', 'ENTREGADO')
+      ORDER BY CASE WHEN d.estado = 'ENTREGADO' THEN 1 ELSE 0 END,
+               d.creado_en DESC
+      LIMIT 1`,
       [usuarioId],
     );
     return result.rows[0] ? despachoFrom(result.rows[0]) : null;
@@ -176,10 +182,42 @@ export class PgDespachoStore implements DespachoRepository {
         if (!exists.rowCount) throw new AppError(403, "DESPACHO_NO_ASIGNADO", "El despacho no está asignado a su cuenta");
         throw new AppError(409, "LLEGADA_NO_VALIDA", "El despacho debe estar en tránsito para registrar la llegada");
       }
+
       await audit(client, { id: usuarioId, email: "", nombre: "Conductor autenticado", rol: "CONDUCTOR" }, "DESPACHO_LLEGADA_CONFIRMADA", despachoId, {
         usuarioId,
         horaServidor: horaLlegada,
         metodo: "confirmacion_llegada_conductor",
+      });
+      return despachoFrom(result.rows[0]);
+    });
+  }
+
+  async registrarRetornoComoConductor(despachoId: string, usuarioId: string, horaRetorno: string) {
+    return transaction(this.pool, async (client) => {
+      const result = await client.query<DespachoRow>(
+        `UPDATE despachos d
+         SET hora_retorno = $3, retorno_por_usuario_id = $2,
+             estado = 'ENTREGADO', actualizado_en = $3
+         FROM conductores c
+         WHERE d.id = $1 AND c.id = d.conductor_id AND c.usuario_id = $2
+           AND d.estado = 'EN_OBRA'
+         RETURNING d.*`,
+        [despachoId, usuarioId, horaRetorno],
+      );
+      if (!result.rows[0]) {
+        const exists = await client.query(
+          `SELECT d.estado FROM despachos d
+           JOIN conductores c ON c.id = d.conductor_id
+           WHERE d.id = $1 AND c.usuario_id = $2`,
+          [despachoId, usuarioId],
+        );
+        if (!exists.rowCount) throw new AppError(403, "DESPACHO_NO_ASIGNADO", "El despacho no está asignado a su cuenta");
+        throw new AppError(409, "RETORNO_NO_VALIDO", "Debe confirmar la llegada a obra antes de registrar el retorno a la hormigonera");
+      }
+      await audit(client, { id: usuarioId, email: "", nombre: "Conductor autenticado", rol: "CONDUCTOR" }, "DESPACHO_RETORNO_CONFIRMADO", despachoId, {
+        usuarioId,
+        horaServidor: horaRetorno,
+        metodo: "confirmacion_retorno_hormigonera",
       });
       return despachoFrom(result.rows[0]);
     });

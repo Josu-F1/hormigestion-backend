@@ -64,6 +64,11 @@ export class DespachoService {
     return this.repository.registrarLlegadaComoConductor(despachoId, actor.id, this.clock().toISOString());
   }
 
+  async registrarRetornoComoConductor(despachoId: string, actor: Actor) {
+    requireRole(actor, ["CONDUCTOR"]);
+    return this.repository.registrarRetornoComoConductor(despachoId, actor.id, this.clock().toISOString());
+  }
+
   /**
    * Monitor de Trazabilidad: Devuelve los despachos activos
    * con su estado calculado de alerta de fraguado.

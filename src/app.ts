@@ -137,6 +137,9 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   privateApi.post("/despachos/:id/registrar-llegada", async (req, res) => {
     res.json(await despachos.registrarLlegadaComoConductor(uuid.parse(req.params.id), actorFrom(res)));
   });
+  privateApi.post("/despachos/:id/registrar-retorno", async (req, res) => {
+    res.json(await despachos.registrarRetornoComoConductor(uuid.parse(req.params.id), actorFrom(res)));
+  });
   privateApi.get("/despachos/activos", async (_req, res) => {
     res.json({ data: await despachos.viajesActivos(actorFrom(res)) });
   });

@@ -35,6 +35,8 @@ export type DespachoRecord = {
   horaSalida: string | null;
   horaLlegada: string | null;
   llegadaPorUsuarioId: string | null;
+  horaRetorno: string | null;
+  retornoPorUsuarioId: string | null;
   estado: "PENDIENTE" | "EN_TRANSITO" | "EN_OBRA" | "ENTREGADO";
   iniciadoPorUsuarioId: string | null;
   iniciadoEn: string | null;
@@ -43,10 +45,11 @@ export type DespachoRecord = {
 export interface DespachoRepository {
   obtenerPedidoAprobado(pedidoId: string): Promise<{ volumenM3: number } | null>;
   obtenerConductoresDisponibles(): Promise<{ id: string; nombre: string; disponible: boolean }[]>;
-  crearDespacho(despacho: Omit<DespachoRecord, "horaSalida" | "horaLlegada" | "estado" | "iniciadoPorUsuarioId" | "iniciadoEn" | "llegadaPorUsuarioId">): Promise<DespachoRecord>;
+  crearDespacho(despacho: Omit<DespachoRecord, "horaSalida" | "horaLlegada" | "horaRetorno" | "estado" | "iniciadoPorUsuarioId" | "iniciadoEn" | "llegadaPorUsuarioId" | "retornoPorUsuarioId">): Promise<DespachoRecord>;
   iniciarTransito(despachoId: string, horaSalida: string): Promise<DespachoRecord>;
   obtenerDespachoDelConductor(usuarioId: string): Promise<DespachoRecord | null>;
   iniciarTransitoComoConductor(despachoId: string, usuarioId: string, horaSalida: string): Promise<DespachoRecord>;
   registrarLlegadaComoConductor(despachoId: string, usuarioId: string, horaLlegada: string): Promise<DespachoRecord>;
+  registrarRetornoComoConductor(despachoId: string, usuarioId: string, horaRetorno: string): Promise<DespachoRecord>;
   obtenerViajesActivos(): Promise<DespachoRecord[]>;
 }
