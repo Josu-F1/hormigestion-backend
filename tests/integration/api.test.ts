@@ -312,16 +312,26 @@ test("fecha local y vencimiento de cotizaciones coinciden con las reglas comerci
   const before = now;
   try {
     now = new Date("2026-10-05T04:59:59Z");
+    const sundayBefore = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
+    assert.equal(sundayBefore.status, 200);
+    now = new Date("2026-10-05T05:00:00Z");
+    const mondayBefore = await call("/api/v1/admin/reportes?desde=2026-10-05&hasta=2026-10-05", "GET", undefined, tokens.admin);
+    assert.equal(mondayBefore.status, 200);
+    now = new Date("2026-10-12T04:59:59Z");
+    const expiredBefore = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
+    assert.equal(expiredBefore.status, 200);
+    now = new Date("2026-10-05T04:59:59Z");
     const created = await call("/api/v1/cotizaciones", "POST", creationInput(), undefined, { "Idempotency-Key": randomUUID() });
     assert.equal(created.status, 201);
     assert.equal(localDate(now, "America/Guayaquil"), "2026-10-04");
     const sunday = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
-    assert.equal(sunday.status, 200); assert.equal(sunday.data.indicadores.cotizaciones, 1); assert.equal(sunday.data.alertaSemanal.desde, "2026-09-28");
+    assert.equal(sunday.status, 200); assert.equal(sunday.data.indicadores.cotizaciones, sundayBefore.data.indicadores.cotizaciones + 1); assert.equal(sunday.data.alertaSemanal.desde, "2026-09-28");
     now = new Date("2026-10-05T05:00:00Z");
     const monday = await call("/api/v1/admin/reportes?desde=2026-10-05&hasta=2026-10-05", "GET", undefined, tokens.admin);
-    assert.equal(monday.status, 200); assert.equal(monday.data.indicadores.cotizaciones, 0); assert.equal(monday.data.alertaSemanal.desde, "2026-10-05");
+    assert.equal(monday.status, 200); assert.equal(monday.data.indicadores.cotizaciones, mondayBefore.data.indicadores.cotizaciones); assert.equal(monday.data.alertaSemanal.desde, "2026-10-05");
     now = new Date(created.data.cotizacion.validaHasta);
     const expired = await call("/api/v1/admin/reportes?desde=2026-10-04&hasta=2026-10-04", "GET", undefined, tokens.admin);
-    assert.equal(expired.data.indicadores.vencidas, 1); assert.equal(expired.data.indicadores.pendientes, 0);
+    assert.equal(expired.data.indicadores.vencidas, expiredBefore.data.indicadores.vencidas + 1);
+    assert.equal(expired.data.indicadores.pendientes, expiredBefore.data.indicadores.pendientes);
   } finally { now = before; }
 });
