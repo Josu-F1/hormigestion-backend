@@ -25,6 +25,9 @@ export async function seedDemo(pool: Pool, password: string) {
       const id = randomUUID();
       if (role === "ADMINISTRADOR") adminId = id;
       await client.query("INSERT INTO usuarios(id,email,nombre,password_hash,rol_codigo,datos_demostracion) VALUES($1,$2,$3,$4,$5,true)", [id, `${name}@demo.hormigestion.test`, displayName, passwordHash, role]);
+      if (role === "CONDUCTOR") {
+        await client.query("UPDATE conductores SET usuario_id=$1 WHERE id='50000000-0000-0000-0000-000000000002'", [id]);
+      }
     }
     const version = await client.query<{ version: number }>("INSERT INTO configuracion_versiones(contenido,motivo,autor_id) VALUES($1,$2,$3) RETURNING version", [JSON.stringify(demoConfiguration), "Datos ficticios autorizados para desarrollo del proyecto", adminId]);
     await writeCatalogs(client, demoConfiguration, version.rows[0]!.version);

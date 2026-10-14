@@ -37,7 +37,7 @@ export async function migrate(pool: Pool, appPassword?: string) {
         REVOKE ALL ON SCHEMA public FROM PUBLIC;
         GRANT USAGE ON SCHEMA public TO hormigestion_app;
         GRANT SELECT ON roles TO hormigestion_app;
-        GRANT SELECT,INSERT,UPDATE ON usuarios,configuracion_actual,resistencias,elementos_constructivos,zonas_flete,camiones_mixer,clientes,cotizaciones TO hormigestion_app;
+        GRANT SELECT,INSERT,UPDATE ON usuarios,configuracion_actual,resistencias,elementos_constructivos,zonas_flete,camiones_mixer,clientes,cotizaciones,conductores,despachos TO hormigestion_app;
         GRANT SELECT,INSERT ON configuracion_versiones,detalles_cotizacion,auditoria_eventos TO hormigestion_app;
         GRANT SELECT,INSERT,UPDATE ON eventos_salida TO hormigestion_app;
         GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO hormigestion_app;

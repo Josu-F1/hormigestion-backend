@@ -15,7 +15,7 @@ Para empezar: [README](../README.md), [entorno y colaboración](../CONTRIBUTING.
 | Configuración y catálogo | Parámetros comerciales/técnicos editables, versiones históricas, catálogos públicos y flota administrativa | Pantalla de edición; confirmar datos comerciales y referencias INEN con la empresa |
 | Cotización | Geometrías, desperdicio, redondeo, flete/bombeo/impuesto, registro idempotente, snapshot, comprobante privado/PDF, consulta y estados comerciales | Formulario público y gestión comercial en frontend; convertir aprobación en pedido/programación |
 | Módulo 3.5 | Indicadores, demanda por resistencia/zona, CSV, proyección estadística de cuatro semanas, recomendaciones y pulso semanal | Evaluar demanda efectiva con pedidos/despachos; validar el pronóstico para operación real |
-| Logística | Parámetros de capacidad/horarios/ciclo, mixers y rol DESPACHADOR | Pedidos, reservas, asignación, disponibilidad temporal, viajes, despacho, cronómetro y recepción |
+| Logística | Parámetros de capacidad/horarios/ciclo, mixers, conductores y despacho administrativo: asignación, disponibilidad, viajes activos e inicio de tránsito | Pedido/programación completa, recepción y cierre operativo |
 | Calidad | Parámetros técnicos y rol LABORATORISTA | Controles, muestras, probetas, ensayos, dictamen y dossier/trazabilidad |
 | Conductor | Cuenta y rol CONDUCTOR | Operaciones y restricciones por viaje/conductor asignado |
 | Automatización | Evento `COTIZACION_SOLICITADA` persistido en outbox con la cotización | Worker y entrega a n8n; notificaciones externas y alerta programada |

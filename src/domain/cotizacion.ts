@@ -23,7 +23,10 @@ export const createQuotationSchema = calculationSchema.extend({
     telefono: z.string().trim().regex(/^\+?[0-9 ()-]{8,20}$/),
     email: z.email().max(254).optional(),
   }),
-  obra: z.strictObject({ direccion: z.string().trim().min(10).max(500), fechaPreferida: z.iso.date() }),
+  obra: z.strictObject({
+    direccion: z.string().trim().min(10, "La dirección de la obra debe tener al menos 10 caracteres").max(500),
+    fechaPreferida: z.iso.date(),
+  }),
 });
 export type CalculationInput = z.infer<typeof calculationSchema>;
 export type CreateQuotationInput = z.infer<typeof createQuotationSchema>;
