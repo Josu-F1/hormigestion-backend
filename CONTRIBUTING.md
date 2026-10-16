@@ -56,9 +56,9 @@ Al cambiar una respuesta o entrada, actualizar [OpenAPI](src/infrastructure/open
 
 ## 3. Ramas y entrega
 
-La inicialización y estos incrementos del backend están en `main`, según el acuerdo del proyecto. No se ha establecido aquí una cadena obligatoria `develop` para este repositorio; esa estructura corresponde al frontend.
+`develop` contiene los últimos cambios de desarrollo y se mantiene separada de `main`. Para esta entrega, crear `feature/ci-quality-metrics` desde `develop` y abrir PR hacia `develop`; no modificar `main`, desplegar ni hacer merge automático.
 
-Antes de empezar, comprobar `git status` y actualizar la base compartida con `git pull --ff-only`. Si hay commits locales sin publicar, revisar el historial antes de integrar; no resetear trabajo para forzar la actualización. Para trabajo simultáneo se puede usar `feature/<modulo>` desde `main` y abrir PR a `main`, conservando el trabajo de los demás.
+Antes de empezar, comprobar `git status` y actualizar la base compartida con `git pull --ff-only`. Si hay commits locales sin publicar, revisar el historial antes de integrar; no resetear trabajo para forzar la actualización. Para trabajo simultáneo usar ramas `feature/<modulo>` desde `develop` y PR a `develop`, conservando el trabajo de los demás.
 
 La entrega debe indicar:
 
@@ -76,7 +76,7 @@ npm run test:integration
 npm run build
 ```
 
-El runner de integración crea y elimina **su propia base temporal**; necesita PostgreSQL iniciado y la cuenta de migración con permisos para crear esa base. Usar `npm run test:integration`, no ejecutar directamente el archivo de pruebas sobre la base de desarrollo. La evidencia anterior es de 23 casos unitarios y 26 integrados; registrar el resultado real de cada entrega.
+El runner de integración crea y elimina **su propia base temporal**; necesita PostgreSQL iniciado y la cuenta de migración con permisos para crear esa base. Usar `npm run test:integration`, no ejecutar directamente el archivo de pruebas sobre la base de desarrollo. La evidencia anterior es de 23 casos unitarios y 26 integrados; registrar el resultado real de cada entrega. La [guía de CI y calidad](docs/ci-quality.md) explica `npm run test:coverage`, `npm run test:ci-tools`, `TEST_REPORTS_DIR=reports` y la consulta de JUnit, LCOV y `ci-metrics.json`. La cobertura mide líneas de `src/**/*.ts` cargadas por las unitarias, no todo el backend; no tiene umbral bloqueante.
 
 | Síntoma | Revisar/acción |
 | --- | --- |
