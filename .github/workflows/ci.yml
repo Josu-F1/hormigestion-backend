@@ -1,0 +1,90 @@
+name: Backend quality
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci_migrator
+          POSTGRES_PASSWORD: ci-postgres-isolated-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U ci_migrator -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      APP_DB_PASSWORD: ci-application-password-isolated-only
+      JWT_SECRET: ci-jwt-secret-isolated-at-least-32-characters
+      COMPROBANTE_SECRET: ci-receipt-secret-independent-at-least-32-characters
+      DEMO_PASSWORD: ci-demo-password-only
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          # Test the source commit: it matches Actions run.head_sha, not a synthetic merge SHA.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record tested commit
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        id: install
+        run: npm ci
+      - name: Typecheck
+        id: types
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+      - name: Test CI tooling
+        id: tooling
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run test:ci-tools
+      - name: Unit tests and native coverage
+        id: unit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run test:coverage
+      - name: Build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run build
+      - name: Isolated integration tests
+        id: integration
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          TEST_REPORTS_DIR: reports
+          DATABASE_URL: postgresql://ci_migrator:ci-postgres-isolated-only@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres
+          MIGRATION_DATABASE_URL: postgresql://ci_migrator:ci-postgres-isolated-only@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres
+        run: npm run test:integration
+      - name: Generate and validate provisional metrics
+        if: ${{ always() && steps.source.outcome == 'success' }}
+        env:
+          CI_COMMIT_SHA: ${{ steps.source.outputs.sha }}
+          CI_STATUS: ${{ job.status == 'cancelled' && 'cancelled' || (steps.install.outcome == 'success' && steps.types.outcome == 'success' && steps.tooling.outcome == 'success' && steps.unit.outcome == 'success' && steps.build.outcome == 'success' && steps.integration.outcome == 'success' && 'success' || 'failure') }}
+        run: npm run ci:metrics
+      - name: Upload evidence even when checks fail
+        if: ${{ always() && steps.source.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-quality-${{ steps.source.outputs.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 14

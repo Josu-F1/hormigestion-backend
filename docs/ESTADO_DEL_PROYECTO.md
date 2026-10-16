@@ -86,6 +86,8 @@ Un módulo nuevo incorpora dominio, servicio, repositorio, migración si corresp
 
 ## 6. Evidencia y límites de entrega
 
+La rama `feature/ci-quality-metrics`, basada en `develop`, incorpora [CI y métricas de calidad](ci-quality.md): Node.js 24, PostgreSQL 16 efímero, tipos, pruebas, compilación y reportes JUnit/LCOV. El [contrato v1](contracts/ci-metrics.v1.md) es **PROVISIONAL — PENDIENTE DE VALIDACIÓN CON AGENTEGESTIONPROYECTOS**; todavía no hay consumo automático MultiRepo ni umbral de cobertura bloqueante. Verificación local de esta entrega con Node.js 24.22.0/PostgreSQL 16: 23 unitarias, 26 integradas, typecheck y build correctos; cobertura real 373/381 líneas (97,90 %) de seis archivos cargados por las unitarias, no de todo el backend. La definición del workflow no demuestra por sí sola una ejecución remota exitosa: consultar su ejecución y artefactos vinculados al SHA. No se modifica producción ni se integra a `main` automáticamente.
+
 Base registrada: `89b584a` inicializa el backend; `3fab6a7` añade reportería/proyección. La última verificación funcional documentada pasó **23 pruebas unitarias y 26 integradas**, typecheck, build e imagen Docker con Node.js 24/PostgreSQL 16. La revisión actual añade documentación; no implica una nueva aceptación de todos los módulos del acta.
 
 Siguen pendientes validación con datos reales, pruebas operativas de logística/calidad, producción, recuperación ante fallos y aceptación con la empresa. Las decisiones del plan inicial no se convierten en funcionalidades hasta que existan código, contrato y evidencia de ejecución.

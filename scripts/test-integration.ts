@@ -1,8 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { rm } from "node:fs/promises";
+import { join } from "node:path";
+import { testReportArgs } from "./test-report-options.mjs";
 import { loadEnv } from "../src/infrastructure/env.js";
 import { createPool } from "../src/infrastructure/database/pool.js";
 
+const reportDirectory = process.env.TEST_REPORTS_DIR;
+if (reportDirectory) {
+  for (const filename of ["integration-junit.xml", "integration-summary.json"]) {
+    await rm(join(reportDirectory, filename), { force: true });
+  }
+}
+const reportArgs = await testReportArgs("integration", { directory: reportDirectory });
 const env = loadEnv();
 if (!env.MIGRATION_DATABASE_URL || !env.APP_DB_PASSWORD) throw new Error("Pruebas integradas requieren MIGRATION_DATABASE_URL y APP_DB_PASSWORD para crear una base temporal aislada");
 const name = `hormigestion_test_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
@@ -16,7 +26,7 @@ try {
   owner.pathname = `/${name}`;
   const app = new URL(owner); app.username = "hormigestion_app"; app.password = env.APP_DB_PASSWORD;
   console.log("Pruebas contra PostgreSQL real en base temporal aislada; datos de desarrollo conservados.");
-  const child = spawn(process.execPath, ["--import", "tsx", "--test", "--test-isolation=none", "tests/integration/api.test.ts"], {
+  const child = spawn(process.execPath, ["--import", "tsx", "--test", "--test-isolation=none", ...reportArgs, "tests/integration/api.test.ts"], {
     stdio: "inherit",
     env: { ...process.env, NODE_ENV: "test", TEST_DATABASE_URL: owner.toString(), TEST_APP_DATABASE_URL: app.toString(), APP_DB_PASSWORD: env.APP_DB_PASSWORD },
   });
