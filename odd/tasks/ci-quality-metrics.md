@@ -102,10 +102,28 @@ Entregar el PR hacia `develop`, indicando pruebas ejecutadas, cobertura obtenida
 
 No hacer merge automático ni modificar producción.
 
+S6. Autorizo continuar con la entrega bajo las siguientes condiciones:
+
+1. Comprueba si existe una issue aprobada que cubra CI Quality Metrics. Si no existe, autorizo crear una nueva, con alcance, criterios de aceptación y trazabilidad de los commits `2e10178` y `e61ebe2`.
+
+2. Mantén la política de una rama por issue y un único PR. Puedes publicar `feature/ci-quality-metrics` y preparar un PR Draft hacia `develop`, vinculado a la issue correspondiente.
+
+3. La revisión nativa sigue siendo obligatoria. Intenta resolver el bloqueo mediante los mecanismos disponibles. Si no es posible, documenta la limitación y deja el PR explícitamente pendiente de revisión, sin sustituirla por una aprobación simulada.
+
+4. Verifica especialmente el riesgo 5: permisos del workflow, procedencia de artefactos CI, trazabilidad del commit, integridad de evidencias y protección frente a exposición de secretos.
+
+5. Ejecuta CI remoto mediante GitHub Actions y documenta los resultados. No presentes las verificaciones locales como equivalentes a una ejecución remota.
+
+6. Reporta la cobertura del 97,90 % únicamente sobre los seis archivos instrumentados, no como cobertura global del frontend.
+
+7. No realices merge hacia `develop` hasta cumplir los controles de aprobación, revisión y CI. No modifiques `main` ni producción.
+
+Al finalizar, entrega los enlaces de la issue y del PR, los resultados de Actions y los bloqueos pendientes.
+
 ## Tasks
 - T1 | S1-S4 | delegated reporting writer plus inline disjoint workflow/report bridge; independent verifier (CI high risk item 5) | done | commit: 2e101780f0ba61477486c9b3a2ac77f6e07e1f17; writer settled 13/13 tests; full Node24 tooling seam 15/15 (job-10). Baseline 23 unit +26 integration pass; helper RED then GREEN 2/2; actionlint corrected then GREEN. Node24.22 npm ci/typecheck/build passed. Reports: unit23/23, integration26/26, 373/381 lines =97.90%, LCOV reconciled. Independent verifier mva8lx5z-3-ia7x settled: S1/S3/S4/S5 PASS locally, S2 PARTIAL only because remote Actions not run. Independent Node24 tooling15/15, typecheck/build/actionlint PASS; CLI isolated probes and JUnit/LCOV reconcile. No code blockers. Parent staging explained; source-drift concern withdrawn. Scratch cleanup blocked by child safety; ignored .local/ci-quality-verify.Up3tca preserved. Native assess unavailable on workspace due untracked inventory; committed candidate assessment next. One coherent CI/reporting work unit committed with tests and docs: 2e101780f0ba61477486c9b3a2ac77f6e07e1f17. Committed-only native assessment remains unassessable because unrelated .codegraph inventory requires declaration; no additional test run is warranted.
-- T2 | S2,S5 | inline: finalize documentation, work-unit commits and applicable native review | blocked | implementation/docs commit: 2e101780f0ba61477486c9b3a2ac77f6e07e1f17; all functional/local independent checks passed. Native assessment unavailable; START returned native-start-retained-selection-candidate-mismatch, mutation_performed:false, mutation_outcome:none. Needs maintainer resolution or explicit user decision leaving this candidate unreviewed; never reset/recover automatically.
-- T3 | S1-S5 | inline: PR delivery to develop, remote Actions evidence | blocked | requires user's issue-link decision (create issue authorization or approved issue reference); no issues found in target. No PR/remote run claimed.
+- T2 | S2,S5,S6 | inline: finalize documentation and mandatory native review; new scoped attempt in isolated same-clone worktree | in_progress | implementation/docs commit: 2e101780f0ba61477486c9b3a2ac77f6e07e1f17; all functional/local independent checks passed. Native assessment unavailable; START returned native-start-retained-selection-candidate-mismatch, mutation_performed:false, mutation_outcome:none. User authorized another bounded resolution attempt, but native review remains mandatory; if unavailable, leave Draft explicitly pending. Never reset/recover automatically.
+- T3 | S1-S6 | inline: one issue, publish feature branch and one Draft PR to develop; Actions and artifact integrity evidence | pending | authorization now granted; no existing issues found (all-state query). No remote execution claimed yet.
 
 ## Log
 L1. Original request (verbatim):
@@ -244,3 +262,22 @@ Implementar en una rama desde `develop` y abrir un PR hacia `develop`, sin reali
 L3. Evidence: clean develop aligned with origin/develop, feature branch created after fetch/ff-only. main pinned at 5412744023c4b3961be9cd783609423d12280f64. Local Node v26.9.0 is supported but CI will use 24 LTS. PostgreSQL 16 Docker available. Agent adapter currently always emits null metrics; no artifact ingestion exists; v1 is future interoperability, not implemented integration. No issues currently found in target repo; do not invent approved linkage. Generated .codegraph is exploration metadata, exclude from delivery.
 
 L4. Verified implementation committed as 2e101780f0ba61477486c9b3a2ac77f6e07e1f17. Risk: item5 (CI/environment), independent verification completed; local checks reported above. Whole PR ~1567 authored diff lines (244 tracking lines, 508 test lines); one coherent requested CI/reporting delivery, explicit single-PR strategy. No production/backend functional source changes. Native assessment failed with untracked declaration even for committed-only range. Inspect with exclude worked for workspace, but explicit committed START returned native-start-retained-selection-candidate-mismatch, mutation_performed:false, mutation_outcome:none. No lineage created, approval/consent inferred, reset/recover performed, or native verdict claimed. Stop on unavailable native proof pending human disposition, not extra verification. PR/Actions pending approved issue decision. Frontend confirmed same provisional v1 field definitions; agent validation remains outstanding. Reports and child scratch retained ignored; no fake local Actions metrics published.
+
+L5. User delivery authorization (verbatim):
+Autorizo continuar con la entrega bajo las siguientes condiciones:
+
+1. Comprueba si existe una issue aprobada que cubra CI Quality Metrics. Si no existe, autorizo crear una nueva, con alcance, criterios de aceptación y trazabilidad de los commits `2e10178` y `e61ebe2`.
+
+2. Mantén la política de una rama por issue y un único PR. Puedes publicar `feature/ci-quality-metrics` y preparar un PR Draft hacia `develop`, vinculado a la issue correspondiente.
+
+3. La revisión nativa sigue siendo obligatoria. Intenta resolver el bloqueo mediante los mecanismos disponibles. Si no es posible, documenta la limitación y deja el PR explícitamente pendiente de revisión, sin sustituirla por una aprobación simulada.
+
+4. Verifica especialmente el riesgo 5: permisos del workflow, procedencia de artefactos CI, trazabilidad del commit, integridad de evidencias y protección frente a exposición de secretos.
+
+5. Ejecuta CI remoto mediante GitHub Actions y documenta los resultados. No presentes las verificaciones locales como equivalentes a una ejecución remota.
+
+6. Reporta la cobertura del 97,90 % únicamente sobre los seis archivos instrumentados, no como cobertura global del frontend.
+
+7. No realices merge hacia `develop` hasta cumplir los controles de aprobación, revisión y CI. No modifiques `main` ni producción.
+
+Al finalizar, entrega los enlaces de la issue y del PR, los resultados de Actions y los bloqueos pendientes.
