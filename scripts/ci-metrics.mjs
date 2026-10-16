@@ -128,7 +128,9 @@ async function readSuiteReport(path, status) {
 
 function validateIdentity(environment) {
   const repository = environment.GITHUB_REPOSITORY;
-  const commitSha = environment.GITHUB_SHA;
+  // GitHub's default GITHUB_SHA can remain the synthetic merge SHA in PR jobs.
+  // Use the captured checkout identity without overriding a protected variable.
+  const commitSha = environment.CI_COMMIT_SHA ?? environment.GITHUB_SHA;
   const runId = environment.GITHUB_RUN_ID;
   const status = environment.CI_STATUS;
   const runAttempt = environment.GITHUB_RUN_ATTEMPT;
@@ -137,7 +139,9 @@ function validateIdentity(environment) {
     throw new Error("GITHUB_REPOSITORY is required and must be owner/repo");
   }
   if (typeof commitSha !== "string" || !/^[0-9a-f]{40}$/.test(commitSha)) {
-    throw new Error("GITHUB_SHA is required and must be a full 40-character commit SHA");
+    throw new Error(environment.CI_COMMIT_SHA !== undefined
+      ? "CI_COMMIT_SHA must be a full 40-character commit SHA"
+      : "GITHUB_SHA is required and must be a full 40-character commit SHA");
   }
   if (typeof runId !== "string" || !/^[1-9][0-9]*$/.test(runId)) {
     throw new Error("GITHUB_RUN_ID is required and must be a positive decimal string");
@@ -276,7 +280,7 @@ export function validateCiMetrics(value, schema) {
 async function runCli() {
   const args = process.argv.slice(2);
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-    process.stdout.write("Usage: node scripts/ci-metrics.mjs\n\nReads reports/unit-summary.json and reports/integration-summary.json; validates and writes reports/ci-metrics.json.\nRequired environment: GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_RUN_ID, CI_STATUS (success|failure|cancelled).\nOptional environment: GITHUB_RUN_ATTEMPT.\n");
+    process.stdout.write("Usage: node scripts/ci-metrics.mjs\n\nReads reports/unit-summary.json and reports/integration-summary.json; validates and writes reports/ci-metrics.json.\nRequired environment: GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_RUN_ID, CI_STATUS (success|failure|cancelled).\nOptional environment: CI_COMMIT_SHA (captured checkout SHA; takes precedence over GITHUB_SHA), GITHUB_RUN_ATTEMPT.\n");
     return;
   }
   if (args.length > 0) throw new Error("Unsupported arguments; use --help for usage");

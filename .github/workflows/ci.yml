@@ -77,7 +77,7 @@ jobs:
       - name: Generate and validate provisional metrics
         if: ${{ always() && steps.source.outcome == 'success' }}
         env:
-          GITHUB_SHA: ${{ steps.source.outputs.sha }}
+          CI_COMMIT_SHA: ${{ steps.source.outputs.sha }}
           CI_STATUS: ${{ job.status == 'cancelled' && 'cancelled' || (steps.install.outcome == 'success' && steps.types.outcome == 'success' && steps.tooling.outcome == 'success' && steps.unit.outcome == 'success' && steps.build.outcome == 'success' && steps.integration.outcome == 'success' && 'success' || 'failure') }}
         run: npm run ci:metrics
       - name: Upload evidence even when checks fail

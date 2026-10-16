@@ -14,13 +14,13 @@
 | --- | --- |
 | `schema_version` | Literal `v1`. |
 | `repository` | `GITHUB_REPOSITORY`, con formato `owner/repo`. |
-| `commit_sha` | `GITHUB_SHA`, SHA completo de 40 caracteres correspondiente al checkout realmente probado. No se crea una identidad local ficticia. |
+| `commit_sha` | `CI_COMMIT_SHA`, SHA completo de 40 caracteres capturado del checkout realmente probado. Si no se define, el CLI conserva `GITHUB_SHA` como fallback compatible. Un valor explícito inválido se rechaza, sin usar el fallback. No se fabrica identidad local. |
 | `workflow_run_id` | `GITHUB_RUN_ID`, conservado como cadena decimal. |
 | `workflow_run_attempt` | `GITHUB_RUN_ATTEMPT`, cadena decimal opcional. |
 | `status` | `CI_STATUS`: `success`, `failure` o `cancelled`, calculado por el workflow con el resultado de sus comprobaciones. |
 | `e2e_status` | Extensión frontend opcional: puede ser `not_implemented`. El backend no la emite ni la requiere. |
 
-En pull requests el workflow prueba el **SHA de origen del PR** (`github.event.pull_request.head.sha`), registra el SHA real de `git rev-parse HEAD` como `GITHUB_SHA` para el generador y asocia el artefacto a ese checkout y a esa ejecución de Actions. No se sustituye por el SHA de merge sintético de GitHub y no se afirma compatibilidad del resultado con dicho merge.
+En pull requests el workflow prueba el **SHA de origen del PR** (`github.event.pull_request.head.sha`), registra el SHA real de `git rev-parse HEAD` como `CI_COMMIT_SHA` para el generador (sin intentar sobrescribir la variable protegida `GITHUB_SHA`) y asocia el artefacto a ese checkout y a esa ejecución de Actions. No se sustituye por el SHA de merge sintético de GitHub y no se afirma compatibilidad del resultado con dicho merge.
 
 El estado no se deduce de los conteos. Un pipeline fallido sigue siendo `failure` aunque las dos suites pasen. `success` se rechaza si falta un resumen completo o si una suite informa fallas/no éxito. En pipelines fallidos o cancelados, un resumen ausente representa métricas desconocidas (`null`); un resumen presente pero malformado se rechaza. Los datos inválidos no reemplazan un artefacto existente.
 
@@ -74,7 +74,7 @@ node scripts/ci-metrics.mjs --help
 node scripts/ci-metrics.mjs
 ```
 
-El CLI lee `reports/unit-summary.json` y `reports/integration-summary.json`, requiere `GITHUB_REPOSITORY`, `GITHUB_SHA`, `GITHUB_RUN_ID` y `CI_STATUS`, y acepta `GITHUB_RUN_ATTEMPT` como opcional. Valida identidad, estado e informes; después valida el documento construido contra el esquema v1 y solo entonces escribe `reports/ci-metrics.json`. No hay valores de identidad por defecto para ejecución local.
+El CLI lee `reports/unit-summary.json` y `reports/integration-summary.json`, requiere `GITHUB_REPOSITORY`, `GITHUB_SHA`, `GITHUB_RUN_ID` y `CI_STATUS`, y acepta `CI_COMMIT_SHA` (con precedencia sobre `GITHUB_SHA`) y `GITHUB_RUN_ATTEMPT` como opcionales. En el workflow `CI_COMMIT_SHA` siempre se establece desde el checkout; no usar el `GITHUB_SHA` sintético del evento PR para certificar su fuente. Valida identidad, estado e informes; después valida el documento construido contra el esquema v1 y solo entonces escribe `reports/ci-metrics.json`. No hay valores de identidad por defecto para ejecución local.
 
 El validador exportado `validateCiMetrics` implementa el subconjunto de esquema usado aquí: tipos, `enum`, `const`, `pattern`, límites numéricos, campos requeridos y propiedades adicionales. No se presenta como un motor JSON Schema general.
 

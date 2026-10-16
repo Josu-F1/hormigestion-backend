@@ -53,7 +53,7 @@ Es evidencia local de la implementación, no una ejecución de GitHub Actions ni
 3. Descargar `ci-quality-<SHA>-<run_id>-<attempt>` en **Artifacts** (retención: 14 días).
 4. Contrastar `ci-metrics.json` con JUnit, LCOV, los resúmenes y el commit probado.
 
-El checkout de un PR usa explícitamente su **commit fuente** (head), igual que `run.head_sha` de Actions; no certifica el merge sintético con la base. Para pushes usa el commit del evento. El SHA se captura con `git rev-parse HEAD`, se pasa al generador y aparece en el nombre del artefacto junto al ID e intento de ejecución. Nunca atribuir estos resultados a otro SHA.
+El checkout de un PR usa explícitamente su **commit fuente** (head), igual que `run.head_sha` de Actions; no certifica el merge sintético con la base. Para pushes usa el commit del evento. El SHA se captura con `git rev-parse HEAD`, se pasa al generador mediante `CI_COMMIT_SHA` (sin sobrescribir el `GITHUB_SHA` protegido, que puede ser el merge sintético) y aparece en el nombre del artefacto junto al ID e intento de ejecución. Nunca atribuir estos resultados a otro SHA.
 
 El workflow intenta generar/subir evidencia incluso con fallos. Un servicio que no inicia, cancelación forzada o fallo anterior al checkout puede impedir artefactos: **ausencia de artefactos es ausencia de prueba**, no cero fallos. El estado dentro de las métricas resume los pasos de calidad anteriores a la publicación; la conclusión final de Actions también puede fallar si falla generar o subir el artefacto. El consumidor debe comprobar ambos.
 

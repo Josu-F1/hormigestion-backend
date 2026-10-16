@@ -131,6 +131,24 @@ test("writes schema-valid metrics from both suite reports and unit-only line cov
   assert.equal(metrics.test_suites.integration.tests, 4);
 });
 
+test("binds metrics to the explicitly captured source SHA instead of a PR merge default", async (t) => {
+  const directory = await makeReports(t, { unit: suiteReport(), integration: suiteReport() });
+  const sourceSha = "b".repeat(40);
+  const result = runCli(directory, { CI_COMMIT_SHA: sourceSha });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, "");
+  assert.equal(result.stderr, "");
+  assert.equal((await outputMetrics(directory)).commit_sha, sourceSha);
+
+  const { outputPath, sentinel } = await preserveExistingArtifact(directory);
+  const invalid = runCli(directory, { CI_COMMIT_SHA: "invalid-source-sha" });
+  assert.equal(invalid.status, 1);
+  assert.equal(invalid.stdout, "");
+  assert.equal(invalid.stderr, "ci-metrics: CI_COMMIT_SHA must be a full 40-character commit SHA\n");
+  assert.equal(await readFile(outputPath, "utf8"), sentinel);
+});
+
 test("keeps genuine zero counts and zero-percent coverage distinct from unavailable metrics", async (t) => {
   const zeroDirectory = await makeReports(t, {
     unit: suiteReport({ tests: 1, passed: 1, coverage: lineCoverage(0, 5) }),
