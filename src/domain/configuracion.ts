@@ -20,8 +20,16 @@ const uniqueBy = <T>(items: T[], key: (item: T) => string | number) => new Set(i
 export const resistanceSchema = z.strictObject({
   codigo: code, fcKgfCm2: z.int().min(100).max(1000), precioM3: decimal(1, 1000, 2),
   slumpObjetivoMm: decimal(0, 300, 3), agregadoMaxMm: decimal(1, 100, 3),
-  descripcion: text(1, 240), activo: z.boolean(),
+  descripcion: text(1, 600), activo: z.boolean(),
+  nombreComercial: text(1, 150).optional(),
+  usosRecomendados: text(1, 600).optional(),
+  tiempoManejabilidadMin: z.int().min(30).max(300).optional(),
+  bombeable: z.boolean().optional(),
+  edadGarantiaDias: z.int().min(3).max(90).optional(),
+  normativa: text(1, 150).optional(),
+  imagen: text(1, 255).optional(),
 });
+export type Resistance = z.infer<typeof resistanceSchema>;
 export const elementSchema = z.strictObject({
   codigo: code, nombre: text(1, 120), desperdicioSugeridoPct: decimal(0, 30, 3),
   geometria: z.enum(["PRISMA", "CILINDRO", "VOLUMEN_DIRECTO"]), activo: z.boolean(),

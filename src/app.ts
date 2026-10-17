@@ -21,11 +21,43 @@ import { DespachoService } from "./application/despacho-service.js";
 import { PgDespachoStore } from "./infrastructure/database/despacho-store.js";
 import { asignarMixerSchema } from "./domain/despacho.js";
 
-const uuid = z.uuid();
+const uuid = z.string().trim().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, "UUID inválido");
 const changeStateSchema = z.strictObject({ versionEsperada: z.int().positive(), motivo: z.string().trim().min(5).max(500) });
 const paginationSchema = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20), offset: z.coerce.number().int().min(0).max(100000).default(0) });
 const quoteQuerySchema = paginationSchema.extend({ estado: z.enum(["PENDIENTE", "CONTACTADA", "APROBADA", "RECHAZADA", "VENCIDA"]).optional(), q: z.string().trim().max(100).optional() });
 const keySchema = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i, "Idempotency-Key debe ser un UUID v4 nuevo para cada solicitud");
+
+const createMixerSchema = z.strictObject({
+  codigo: z.string().trim().min(2).max(30).regex(/^[A-Z0-9-_]+$/i, "Código debe ser alfanumérico"),
+  placa: z.string().trim().min(3).max(20),
+  marcaModelo: z.string().trim().min(2).max(100),
+  capacidadM3: z.union([z.string(), z.number()]).transform((val) => String(Number(val))),
+  estado: z.enum(["DISPONIBLE", "MANTENIMIENTO", "INACTIVO"]).default("DISPONIBLE"),
+});
+const updateMixerSchema = z.strictObject({
+  codigo: z.string().trim().min(2).max(30).regex(/^[A-Z0-9-_]+$/i, "Código debe ser alfanumérico").optional(),
+  placa: z.string().trim().min(3).max(20).optional(),
+  marcaModelo: z.string().trim().min(2).max(100).optional(),
+  capacidadM3: z.union([z.string(), z.number()]).transform((val) => String(Number(val))).optional(),
+  estado: z.enum(["DISPONIBLE", "MANTENIMIENTO", "INACTIVO"]).optional(),
+});
+const createConductorSchema = z.strictObject({
+  nombreCompleto: z.string().trim().min(3).max(120),
+  cedula: z.string().trim().min(10).max(13),
+  licenciaTipo: z.string().trim().min(1).max(20),
+  telefono: z.string().trim().min(7).max(20),
+  email: z.union([z.string().trim().email().max(254), z.literal("").transform(() => undefined)]).optional(),
+  password: z.union([z.string().min(6).max(72), z.literal("").transform(() => undefined)]).optional(),
+});
+const updateConductorSchema = z.strictObject({
+  nombreCompleto: z.string().trim().min(3).max(120).optional(),
+  cedula: z.string().trim().min(10).max(13).optional(),
+  licenciaTipo: z.string().trim().min(1).max(20).optional(),
+  telefono: z.string().trim().min(7).max(20).optional(),
+  activo: z.boolean().optional(),
+  email: z.union([z.string().trim().email().max(254), z.literal("").transform(() => undefined)]).optional(),
+  password: z.union([z.string().min(6).max(72), z.literal("").transform(() => undefined)]).optional(),
+});
 
 function bearer(req: Request) {
   const value = req.headers.authorization;
@@ -62,8 +94,14 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   app.use(express.json({ limit: "256kb" }));
   const tooMany = (req: Request, res: Response) => res.status(429).json({ error: { codigo: "LIMITE_SOLICITUDES", mensaje: "Demasiadas solicitudes; vuelva a intentar más tarde", requestId: res.locals.requestId } });
   if (options.rateLimits !== false) {
-    app.use("/api/v1", rateLimit({ windowMs: 15 * 60000, limit: 300, standardHeaders: "draft-8", legacyHeaders: false, handler: tooMany }));
-    app.use("/api/v1/auth/login", rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, handler: tooMany }));
+    app.use("/api/v1", rateLimit({
+      windowMs: 15 * 60000,
+      limit: 10000,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      handler: tooMany,
+      skip: (req) => req.path.startsWith("/auth/login"),
+    }));
   }
   app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
   app.get("/health/ready", async (_req, res) => {
@@ -118,9 +156,48 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
     res.json(await settings.update(input.configuracion, input.versionEsperada, input.motivo, actorFrom(res)));
   });
   privateApi.get("/mixers", async (_req, res) => { requireRole(actorFrom(res), ["ADMINISTRADOR", "DESPACHADOR"]); const current = await settings.current(); res.json({ versionConfiguracion: current.version, data: current.configuracion.mixers }); });
+  privateApi.post("/admin/mixers", async (req, res) => {
+    const input = createMixerSchema.parse(req.body);
+    res.status(201).json(await settings.agregarMixer(input, actorFrom(res)));
+  });
+  privateApi.put("/admin/mixers/:codigo", async (req, res) => {
+    const input = updateMixerSchema.parse(req.body);
+    res.json(await settings.actualizarMixer(req.params.codigo, input, actorFrom(res)));
+  });
+  privateApi.patch("/admin/mixers/:codigo/estado", async (req, res) => {
+    const schema = z.strictObject({ estado: z.enum(["DISPONIBLE", "MANTENIMIENTO", "INACTIVO"]) });
+    const { estado } = schema.parse(req.body);
+    res.json(await settings.cambiarEstadoMixer(req.params.codigo, estado, actorFrom(res)));
+  });
+  privateApi.delete("/admin/mixers/:codigo", async (req, res) => {
+    res.json(await settings.cambiarEstadoMixer(req.params.codigo, "INACTIVO", actorFrom(res)));
+  });
+
   privateApi.get("/conductores", async (_req, res) => { res.json({ data: await despachos.conductoresDisponibles(actorFrom(res)) }); });
+  privateApi.get("/admin/conductores", async (_req, res) => {
+    res.json({ data: await despachos.todosConductores(actorFrom(res)) });
+  });
+  privateApi.post("/admin/conductores", async (req, res) => {
+    const input = createConductorSchema.parse(req.body);
+    res.status(201).json({ data: await despachos.crearConductor(input, actorFrom(res)) });
+  });
+  privateApi.put("/admin/conductores/:id", async (req, res) => {
+    const input = updateConductorSchema.parse(req.body);
+    res.json({ data: await despachos.actualizarConductor(uuid.parse(req.params.id), input, actorFrom(res)) });
+  });
+  privateApi.patch("/admin/conductores/:id/estado", async (req, res) => {
+    const schema = z.strictObject({ activo: z.boolean() });
+    const { activo } = schema.parse(req.body);
+    res.json({ data: await despachos.cambiarEstadoConductor(uuid.parse(req.params.id), activo, actorFrom(res)) });
+  });
+  privateApi.delete("/admin/conductores/:id", async (req, res) => {
+    res.json({ data: await despachos.cambiarEstadoConductor(uuid.parse(req.params.id), false, actorFrom(res)) });
+  });
   privateApi.get("/conductor/despacho", async (_req, res) => {
     res.json({ data: await despachos.despachoDelConductor(actorFrom(res)) });
+  });
+  privateApi.get("/conductor/viajes", async (_req, res) => {
+    res.json({ data: await despachos.historialViajesConductor(actorFrom(res)) });
   });
 
   // ── Módulo Despachos (Control en el Mixer) ──────────────────────────
@@ -139,6 +216,21 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   });
   privateApi.post("/despachos/:id/registrar-retorno", async (req, res) => {
     res.json(await despachos.registrarRetornoComoConductor(uuid.parse(req.params.id), actorFrom(res)));
+  });
+  privateApi.post("/despachos/:id/reportar-incidente", async (req, res) => {
+    const schema = z.object({
+      tipo: z.string().trim().min(2),
+      descripcion: z.string().trim().min(3),
+    });
+    const input = schema.parse(req.body);
+    res.json(await despachos.reportarIncidente(uuid.parse(req.params.id), input, actorFrom(res)));
+  });
+  privateApi.post("/despachos/:id/cancelar", async (req, res) => {
+    const schema = z.object({
+      motivo: z.string().trim().min(3).max(500),
+    });
+    const input = schema.parse(req.body);
+    res.json(await despachos.cancelarDespacho(uuid.parse(req.params.id), input.motivo, actorFrom(res)));
   });
   privateApi.get("/despachos/activos", async (_req, res) => {
     res.json({ data: await despachos.viajesActivos(actorFrom(res)) });

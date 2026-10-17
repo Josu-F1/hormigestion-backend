@@ -59,6 +59,82 @@ export class ConfigurationService {
     requireRole(actor, ["ADMINISTRADOR"]);
     return this.repository.update(config, expectedVersion, reason, actor);
   }
+
+  async agregarMixer(mixer: { codigo: string; placa: string; marcaModelo: string; capacidadM3: string; estado: "DISPONIBLE" | "MANTENIMIENTO" | "INACTIVO" }, actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR"]);
+    const current = await this.repository.current();
+    const codigoUpper = mixer.codigo.trim().toUpperCase();
+    const placaUpper = mixer.placa.trim().toUpperCase();
+    if (current.configuracion.mixers.some((m) => m.codigo.toUpperCase() === codigoUpper)) {
+      throw new AppError(409, "MIXER_DUPLICADO", `Ya existe una unidad con el código ${mixer.codigo}`);
+    }
+    if (current.configuracion.mixers.some((m) => m.placa.toUpperCase() === placaUpper)) {
+      throw new AppError(409, "PLACA_DUPLICADA", `Ya existe una unidad con la placa ${mixer.placa}`);
+    }
+    const nuevoMixer = {
+      codigo: codigoUpper,
+      placa: placaUpper,
+      marcaModelo: mixer.marcaModelo.trim(),
+      capacidadM3: mixer.capacidadM3,
+      estado: mixer.estado,
+    };
+    const nextConfig = {
+      ...current.configuracion,
+      mixers: [...current.configuracion.mixers, nuevoMixer],
+    };
+    const updated = await this.repository.update(nextConfig, current.version, `Agregado mixer ${codigoUpper}`, actor);
+    return { mixer: nuevoMixer, version: updated.version };
+  }
+
+  async actualizarMixer(codigo: string, updates: { codigo?: string; placa?: string; marcaModelo?: string; capacidadM3?: string; estado?: "DISPONIBLE" | "MANTENIMIENTO" | "INACTIVO" }, actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR"]);
+    const current = await this.repository.current();
+    const codigoUpper = codigo.trim().toUpperCase();
+    const index = current.configuracion.mixers.findIndex((m) => m.codigo.toUpperCase() === codigoUpper);
+    if (index === -1) throw new AppError(404, "MIXER_NO_ENCONTRADO", "Mixer no encontrado");
+    const prev = current.configuracion.mixers[index]!;
+
+    if (updates.placa) {
+      const placaUpper = updates.placa.trim().toUpperCase();
+      if (current.configuracion.mixers.some((m) => m.codigo.toUpperCase() !== codigoUpper && m.placa.toUpperCase() === placaUpper)) {
+        throw new AppError(409, "PLACA_DUPLICADA", `Ya existe otra unidad con la placa ${updates.placa}`);
+      }
+    }
+
+    let finalCodigo = prev.codigo;
+    if ((updates as any).codigo) {
+      const newCodigoUpper = (updates as any).codigo.trim().toUpperCase();
+      if (newCodigoUpper !== codigoUpper) {
+        if (current.configuracion.mixers.some((m) => m.codigo.toUpperCase() === newCodigoUpper)) {
+          throw new AppError(409, "CODIGO_DUPLICADO", `Ya existe otra unidad con el código ${newCodigoUpper}`);
+        }
+        finalCodigo = newCodigoUpper;
+      }
+    }
+
+    const updatedMixer = {
+      codigo: finalCodigo,
+      placa: updates.placa ? updates.placa.trim().toUpperCase() : prev.placa,
+      marcaModelo: updates.marcaModelo ? updates.marcaModelo.trim() : prev.marcaModelo,
+      capacidadM3: updates.capacidadM3 ? updates.capacidadM3 : prev.capacidadM3,
+      estado: updates.estado ? updates.estado : prev.estado,
+    };
+
+    const nextMixers = [...current.configuracion.mixers];
+    nextMixers[index] = updatedMixer;
+
+    const nextConfig = {
+      ...current.configuracion,
+      mixers: nextMixers,
+    };
+
+    const updated = await this.repository.update(nextConfig, current.version, `Actualizado mixer ${codigoUpper}`, actor);
+    return { mixer: updatedMixer, version: updated.version };
+  }
+
+  async cambiarEstadoMixer(codigo: string, estado: "DISPONIBLE" | "MANTENIMIENTO" | "INACTIVO", actor: Actor) {
+    return this.actualizarMixer(codigo, { estado }, actor);
+  }
 }
 
 export class QuotationService {

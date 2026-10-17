@@ -22,9 +22,10 @@ export async function currentConfiguration(db: Pool | PoolClient, lock = false) 
 
 export async function writeCatalogs(client: PoolClient, config: Configuration, version: number) {
   for (const item of config.resistencias) await client.query(
-    `INSERT INTO resistencias(codigo,fc_kgf_cm2,precio_m3,slump_objetivo_mm,agregado_max_mm,descripcion,activo,version_configuracion) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
-     ON CONFLICT(codigo) DO UPDATE SET fc_kgf_cm2=EXCLUDED.fc_kgf_cm2,precio_m3=EXCLUDED.precio_m3,slump_objetivo_mm=EXCLUDED.slump_objetivo_mm,agregado_max_mm=EXCLUDED.agregado_max_mm,descripcion=EXCLUDED.descripcion,activo=EXCLUDED.activo,version_configuracion=EXCLUDED.version_configuracion`,
-    [item.codigo, item.fcKgfCm2, item.precioM3, item.slumpObjetivoMm, item.agregadoMaxMm, item.descripcion, item.activo, version]);
+    `INSERT INTO resistencias(codigo,fc_kgf_cm2,precio_m3,slump_objetivo_mm,agregado_max_mm,descripcion,activo,version_configuracion,nombre_comercial,usos_recomendados,tiempo_manejabilidad_min,bombeable,edad_garantia_dias,normativa,imagen)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+     ON CONFLICT(codigo) DO UPDATE SET fc_kgf_cm2=EXCLUDED.fc_kgf_cm2,precio_m3=EXCLUDED.precio_m3,slump_objetivo_mm=EXCLUDED.slump_objetivo_mm,agregado_max_mm=EXCLUDED.agregado_max_mm,descripcion=EXCLUDED.descripcion,activo=EXCLUDED.activo,version_configuracion=EXCLUDED.version_configuracion,nombre_comercial=EXCLUDED.nombre_comercial,usos_recomendados=EXCLUDED.usos_recomendados,tiempo_manejabilidad_min=EXCLUDED.tiempo_manejabilidad_min,bombeable=EXCLUDED.bombeable,edad_garantia_dias=EXCLUDED.edad_garantia_dias,normativa=EXCLUDED.normativa,imagen=EXCLUDED.imagen`,
+    [item.codigo, item.fcKgfCm2, item.precioM3, item.slumpObjetivoMm, item.agregadoMaxMm, item.descripcion, item.activo, version, item.nombreComercial ?? null, item.usosRecomendados ?? null, item.tiempoManejabilidadMin ?? null, item.bombeable ?? true, item.edadGarantiaDias ?? 28, item.normativa ?? null, item.imagen ?? null]);
   for (const item of config.elementos) await client.query(
     `INSERT INTO elementos_constructivos(codigo,nombre,desperdicio_sugerido_pct,geometria,activo,version_configuracion) VALUES($1,$2,$3,$4,$5,$6)
      ON CONFLICT(codigo) DO UPDATE SET nombre=EXCLUDED.nombre,desperdicio_sugerido_pct=EXCLUDED.desperdicio_sugerido_pct,geometria=EXCLUDED.geometria,activo=EXCLUDED.activo,version_configuracion=EXCLUDED.version_configuracion`,
@@ -57,9 +58,24 @@ export class PgStore implements ConfigurationRepository, UserRepository, Quotati
       const locked = await client.query("SELECT version FROM configuracion_actual WHERE id=1 FOR UPDATE");
       if (locked.rows[0]?.version !== expectedVersion) throw new AppError(409, "VERSION_CONFIGURACION_DESACTUALIZADA", "Otro usuario cambió la configuración; vuelva a cargarla");
       const previous = await currentConfiguration(client);
-      for (const key of ["resistencias", "elementos", "zonasFlete", "mixers"] as const) {
+      for (const key of ["resistencias", "elementos", "zonasFlete"] as const) {
         const incoming = new Set(config[key].map((item) => item.codigo));
         if (previous.configuracion[key].some((item) => !incoming.has(item.codigo))) throw new AppError(422, "CATALOGO_NO_ELIMINABLE", "Conserve los códigos existentes; desactive registros en vez de eliminarlos");
+      }
+      const incomingMixerCodes = new Set(config.mixers.map((item) => item.codigo));
+      const oldMixerCodes = new Set(previous.configuracion.mixers.map((item) => item.codigo));
+      for (const oldMixer of previous.configuracion.mixers) {
+        if (!incomingMixerCodes.has(oldMixer.codigo)) {
+          const renamed = config.mixers.find((m) => !oldMixerCodes.has(m.codigo) && (m.placa.toUpperCase() === oldMixer.placa.toUpperCase() || config.mixers.length === previous.configuracion.mixers.length));
+          if (renamed) {
+            await client.query(
+              `UPDATE camiones_mixer SET codigo=$1, placa=$2, marca_modelo=$3, capacidad_m3=$4, estado=$5, version_configuracion=$6 WHERE codigo=$7`,
+              [renamed.codigo, renamed.placa.toUpperCase(), renamed.marcaModelo, renamed.capacidadM3, renamed.estado, previous.version, oldMixer.codigo]
+            );
+          } else {
+            throw new AppError(422, "CATALOGO_NO_ELIMINABLE", "Conserve los códigos existentes; desactive registros en vez de eliminarlos");
+          }
+        }
       }
       const result = await client.query<ConfigRow>("INSERT INTO configuracion_versiones(contenido,motivo,autor_id) VALUES($1,$2,$3) RETURNING version,contenido,creado_en,motivo", [JSON.stringify(config), reason, actor.id]);
       const current = configFrom(result.rows[0]!);

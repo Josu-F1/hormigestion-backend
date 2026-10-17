@@ -17,7 +17,7 @@ export async function seedDemo(pool: Pool, password: string) {
     const occupied = await client.query("SELECT 1 FROM usuarios LIMIT 1");
     if (occupied.rowCount) throw new Error("La base contiene personal sin configuración; inicialícela de forma explícita");
     const demoUsers = [
-      ["admin", "Administrador DEMO", "ADMINISTRADOR"], ["despacho", "Despachador DEMO", "DESPACHADOR"],
+      ["admin", "Hormigonera Ltda", "ADMINISTRADOR"], ["despacho", "Despachador DEMO", "DESPACHADOR"],
       ["calidad", "Laboratorista DEMO", "LABORATORISTA"], ["conductor", "Conductor DEMO", "CONDUCTOR"],
     ];
     let adminId = "";
@@ -32,7 +32,7 @@ export async function seedDemo(pool: Pool, password: string) {
     const version = await client.query<{ version: number }>("INSERT INTO configuracion_versiones(contenido,motivo,autor_id) VALUES($1,$2,$3) RETURNING version", [JSON.stringify(demoConfiguration), "Datos ficticios autorizados para desarrollo del proyecto", adminId]);
     await writeCatalogs(client, demoConfiguration, version.rows[0]!.version);
     await client.query("INSERT INTO configuracion_actual(id,version) VALUES(1,$1)", [version.rows[0]!.version]);
-    await audit(client, { id: adminId, email: "admin@demo.hormigestion.test", nombre: "Administrador DEMO", rol: "ADMINISTRADOR" }, "DEMO_INICIALIZADA", "configuracion", { version: version.rows[0]!.version, datosDemostracion: true });
+    await audit(client, { id: adminId, email: "admin@demo.hormigestion.test", nombre: "Hormigonera Ltda", rol: "ADMINISTRADOR" }, "DEMO_INICIALIZADA", "configuracion", { version: version.rows[0]!.version, datosDemostracion: true });
     return true;
   });
 }

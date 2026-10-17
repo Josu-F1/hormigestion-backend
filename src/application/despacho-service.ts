@@ -41,6 +41,26 @@ export class DespachoService {
     return this.repository.obtenerConductoresDisponibles();
   }
 
+  async todosConductores(actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR", "DESPACHADOR"]);
+    return this.repository.obtenerTodosConductores();
+  }
+
+  async crearConductor(input: { nombreCompleto: string; cedula: string; licenciaTipo: string; telefono: string; email?: string; password?: string }, actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR"]);
+    return this.repository.crearConductor({ ...input, id: randomUUID() });
+  }
+
+  async actualizarConductor(id: string, input: { nombreCompleto?: string; cedula?: string; licenciaTipo?: string; telefono?: string; activo?: boolean; email?: string; password?: string }, actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR"]);
+    return this.repository.actualizarConductor(id, input);
+  }
+
+  async cambiarEstadoConductor(id: string, activo: boolean, actor: Actor) {
+    requireRole(actor, ["ADMINISTRADOR"]);
+    return this.repository.cambiarEstadoConductor(id, activo);
+  }
+
   /**
    * OP-06: Inicia el conteo regresivo oficial del viaje (90 minutos).
    */
@@ -52,6 +72,11 @@ export class DespachoService {
   async despachoDelConductor(actor: Actor) {
     requireRole(actor, ["CONDUCTOR"]);
     return this.repository.obtenerDespachoDelConductor(actor.id);
+  }
+
+  async historialViajesConductor(actor: Actor) {
+    requireRole(actor, ["CONDUCTOR"]);
+    return this.repository.obtenerHistorialViajesDelConductor(actor.id);
   }
 
   async iniciarTransitoComoConductor(despachoId: string, actor: Actor) {
@@ -69,6 +94,16 @@ export class DespachoService {
     return this.repository.registrarRetornoComoConductor(despachoId, actor.id, this.clock().toISOString());
   }
 
+  async reportarIncidente(despachoId: string, input: { tipo: string; descripcion: string }, actor: Actor) {
+    requireRole(actor, ["CONDUCTOR", "ADMINISTRADOR", "DESPACHADOR"]);
+    return this.repository.reportarIncidente(despachoId, input, actor);
+  }
+
+  async cancelarDespacho(despachoId: string, motivo: string, actor: Actor): Promise<DespachoRecord> {
+    requireRole(actor, ["CONDUCTOR", "ADMINISTRADOR", "DESPACHADOR"]);
+    return this.repository.cancelarDespacho(despachoId, motivo, actor);
+  }
+
   /**
    * Monitor de Trazabilidad: Devuelve los despachos activos
    * con su estado calculado de alerta de fraguado.
@@ -82,8 +117,8 @@ export class DespachoService {
     const horaActual = this.clock().toISOString();
 
     return activos.map(viaje => {
-      // Si el viaje no tiene hora de salida, está pendiente, no corre el tiempo aún
-      if (!viaje.horaSalida) {
+      // Si el viaje no tiene hora de salida, fue entregado o cancelado, el tiempo de fraguado no corre
+      if (!viaje.horaSalida || viaje.estado === "ENTREGADO" || viaje.estado === "CANCELADO") {
         return {
           ...viaje,
           alerta: { estado: "NORMAL", minutosTranscurridos: 0 }

@@ -3,6 +3,7 @@ import { createApp } from "./app.js";
 import { loadEnv } from "./infrastructure/env.js";
 import { createPool } from "./infrastructure/database/pool.js";
 
+// Carga configuración de entorno y pool de base de datos
 const env = loadEnv();
 const logger = pino({ level: env.LOG_LEVEL });
 const pool = createPool(env.DATABASE_URL, env.DB_POOL_MAX);
