@@ -94,14 +94,8 @@ export function createApp(pool: Pool, env: Env, options: { logger?: Logger; cloc
   app.use(express.json({ limit: "256kb" }));
   const tooMany = (req: Request, res: Response) => res.status(429).json({ error: { codigo: "LIMITE_SOLICITUDES", mensaje: "Demasiadas solicitudes; vuelva a intentar más tarde", requestId: res.locals.requestId } });
   if (options.rateLimits !== false) {
-    app.use("/api/v1", rateLimit({
-      windowMs: 15 * 60000,
-      limit: 10000,
-      standardHeaders: "draft-8",
-      legacyHeaders: false,
-      handler: tooMany,
-      skip: (req) => req.path.startsWith("/auth/login"),
-    }));
+    app.use("/api/v1", rateLimit({ windowMs: 15 * 60000, limit: 300, standardHeaders: "draft-8", legacyHeaders: false, handler: tooMany }));
+    app.use("/api/v1/auth/login", rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, handler: tooMany }));
   }
   app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
   app.get("/health/ready", async (_req, res) => {
