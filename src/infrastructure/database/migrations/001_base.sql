@@ -29,15 +29,6 @@ CREATE TABLE usuarios (
 
 CREATE INDEX usuarios_rol_idx ON usuarios(rol_codigo);
 
--- Inserción de usuarios del sistema
-INSERT INTO usuarios (id, email, nombre, password_hash, rol_codigo, activo, datos_demostracion, creado_en, actualizado_en) VALUES
-  ('d7378089-c586-4b69-be5c-21fb8e6b0bcc', 'admin@demo.hormigestion.test', 'Hormigonera Ltda', '$2b$12$IHsunTgmpQH6Vg07u/QgH.ym0.oBSKXEomDCg9EoBxxWXm2b.nX/6', 'ADMINISTRADOR', true, false, '2026-10-05T12:23:48.389Z', '2026-10-05T12:23:48.389Z'),
-  ('6cac4e1e-d27e-4afc-b9ce-139c43fd1331', 'calidad@demo.hormigestion.test', 'Laboratorista DEMO', '$2b$12$IHsunTgmpQH6Vg07u/QgH.ym0.oBSKXEomDCg9EoBxxWXm2b.nX/6', 'LABORATORISTA', true, true, '2026-10-05T12:23:48.389Z', '2026-10-05T12:23:48.389Z'),
-  ('13f34a5d-974c-4cff-b4d0-618730f54a0e', 'despacho@demo.hormigestion.test', 'Despachador DEMO', '$2b$12$IHsunTgmpQH6Vg07u/QgH.ym0.oBSKXEomDCg9EoBxxWXm2b.nX/6', 'DESPACHADOR', true, true, '2026-10-05T12:23:48.389Z', '2026-10-05T12:23:48.389Z'),
-  ('53f5eb05-0d81-438c-b355-b4faa08ee33a', 'francis323@gmail.com', 'Francisco Cabrera', '$2b$12$rK9nKUH5skuxLKM8y4TtO.WNLxgZ.fAfcyb3pfKJovY0mLzBkSblu', 'CONDUCTOR', true, true, '2026-10-05T12:23:48.389Z', '2026-10-16T07:15:18.000Z'),
-  ('50d4b9fa-c154-4a5d-92e8-95e830c2cf1e', 'santiago2003@outlook.es', 'Segundo Morales', '$2b$12$SncOOna0ZfjsbJdv.e2zHu.Fxq4djLy7ubJqyQMWX.Gw/PTQbYZL.', 'CONDUCTOR', true, false, '2026-10-16T06:40:17.653Z', '2026-10-16T07:15:00.944Z'),
-  ('35dabd47-73cb-420a-834a-96d1695f5af9', 'santichan43@gmail.com', 'Santiago Chango', '$2b$12$o5stewd4rfrV/D2YzJOAhOpxQVnEXi68unpeY8QtB1GEUJHKyMeoW', 'CONDUCTOR', true, false, '2026-10-16T06:41:25.793Z', '2026-10-16T06:41:25.793Z');
-
 -- 2. CONFIGURACIÓN Y VERSIONES DE CATÁLOGO
 CREATE TABLE configuracion_versiones (
   version integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -51,17 +42,6 @@ CREATE TABLE configuracion_actual (
   id smallint PRIMARY KEY CHECK (id = 1),
   version integer NOT NULL REFERENCES configuracion_versiones(version)
 );
-
--- Inserción de la configuración maestra
-INSERT INTO configuracion_versiones (contenido, motivo, autor_id, creado_en)
-VALUES (
-  ${"mixers":[{"placa":"TBA-4120","codigo":"HT-MIX-01","estado":"DISPONIBLE","capacidadM3":"8","marcaModelo":"Hino 700 / Mixer McNeilus 8m³"},{"placa":"TBH-6315","codigo":"HT-MIX-02","estado":"DISPONIBLE","capacidadM3":"8","marcaModelo":"Mack Granite / Mixer Schwing Stetter 8m³"},{"placa":"TBC-8942","codigo":"HT-MIX-03","estado":"DISPONIBLE","capacidadM3":"8","marcaModelo":"Mercedes-Benz Actros / Mixer Cifa 8m³"},{"placa":"TBJ-1209","codigo":"HT-MIX-04","estado":"DISPONIBLE","capacidadM3":"8","marcaModelo":"International WorkStar / Mixer Putzmeister 8m³"},{"placa":"TGH-8531","codigo":"HT-MIX-05","estado":"DISPONIBLE","capacidadM3":"8","marcaModelo":"Mixer Mack Granite 2024"}],"planta":{"canton":"Pelileo","cierre":"18:00","nombre":"Hormigonera Tungurahua - Planta Central Salasaca","apertura":"06:30","provincia":"Tungurahua","zonaHoraria":"America/Guayaquil","diasLaborables":[1,2,3,4,5,6],"capacidadProduccionM3Hora":"60"},"calidad":{"avisoMin":60,"criticoMin":80,"slumpMaxMm":"125","slumpMinMm":"75","temperaturaMaxC":"32","edadesEnsayoDias":[7,28],"limiteEntregaMin":90,"referenciaNormativa":"NTE INEN 1855-1 / ASTM C94 / NEC-SE-HM","referenciaVerificada":true},"comercial":{"flete":{"modelo":"POR_ZONA_M3","radioIncluidoKm":"10","tarifaKmPorViaje":"2.5"},"bombeo":{"tarifaM3":"12","habilitado":true,"cargoMinimo":"120"},"ivaPct":"15","moneda":"USD","condiciones":"Condiciones Generales de Suministro: Precios en USD. Fecha y hora de colado sujetas a confirmación logística con despacho en planta Salasaca. La descarga incluye 45 minutos de espera por camión mixer; tiempo adicional se factura a $25/hora. El cliente debe garantizar acceso vial despejado y firme para vehículos de carga pesada de 28 toneladas. El volumen entregado se certifica mediante guía de remisión oficial y medición en estado fresco.","vigenciaDias":7,"tarifaEsperaHora":"25","desperdicioMaxPct":"20","desperdicioMinPct":"0","esperaIncluidaMin":45,"incrementoVolumenM3":"0.1","diasAccesoComprobante":30,"anticipacionPedidoHoras":24,"modificacionesAnticipacionHoras":24},"elementos":[{"activo":true,"codigo":"LOSA-MACIZA","nombre":"Losa maciza","geometria":"PRISMA","desperdicioSugeridoPct":"5"},{"activo":true,"codigo":"LOSA-ALIVIANADA","nombre":"Losa alivianada con bloques/nervios","geometria":"VOLUMEN_DIRECTO","desperdicioSugeridoPct":"7"},{"activo":true,"codigo":"ZAPATA","nombre":"Zapata o plinto de cimentación","geometria":"PRISMA","desperdicioSugeridoPct":"5"},{"activo":true,"codigo":"COLUMNA-RECTANGULAR","nombre":"Columna rectangular","geometria":"PRISMA","desperdicioSugeridoPct":"5"},{"activo":true,"codigo":"COLUMNA-CIRCULAR","nombre":"Columna circular","geometria":"CILINDRO","desperdicioSugeridoPct":"5"},{"activo":true,"codigo":"MURO-CONTENCION","nombre":"Muro de contención o pantalla","geometria":"PRISMA","desperdicioSugeridoPct":"6"},{"activo":true,"codigo":"VIGA-AEREA","nombre":"Viga de carga o peraltada","geometria":"PRISMA","desperdicioSugeridoPct":"5"},{"activo":true,"codigo":"VOLUMEN-DIRECTO","nombre":"Volumen neto conocido","geometria":"VOLUMEN_DIRECTO","desperdicioSugeridoPct":"5"}],"logistica":{"cargaMin":15,"lavadoMin":15,"retornoMin":30,"descargaMin":30,"capacidadReferenciaViajeM3":"8"},"zonasFlete":[{"activo":true,"canton":"Pelileo","codigo":"PELILEO-CENTRO","sector":"Pelileo Centro y Matriz","distanciaKm":"4","tarifaFleteM3":"6","trasladoEstimadoMin":12},{"activo":true,"canton":"Pelileo","codigo":"SALASACA","sector":"Salasaca (Vía Principal y Comunidades)","distanciaKm":"2","tarifaFleteM3":"5","trasladoEstimadoMin":8},{"activo":true,"canton":"Pelileo","codigo":"PELILEO-GARCIA-MORENO","sector":"García Moreno y Huambaló","distanciaKm":"8","tarifaFleteM3":"7.5","trasladoEstimadoMin":20},{"activo":true,"canton":"Ambato","codigo":"AMBATO-SUR","sector":"Ambato Sur (Huachi Chico / Huachi Grande / Totoras)","distanciaKm":"14","tarifaFleteM3":"8.5","trasladoEstimadoMin":25},{"activo":true,"canton":"Ambato","codigo":"AMBATO-CENTRO-NORTE","sector":"Ambato Centro y Norte (Ficoa / Miraflores / Atocha / Izamba)","distanciaKm":"18","tarifaFleteM3":"10","trasladoEstimadoMin":35},{"activo":true,"canton":"Cevallos","codigo":"CEVALLOS","sector":"Cevallos Centro y Alrededores","distanciaKm":"11","tarifaFleteM3":"7.5","trasladoEstimadoMin":20},{"activo":true,"canton":"Baños","codigo":"BANOS","sector":"Baños de Agua Santa (Casco Urbano)","distanciaKm":"24","tarifaFleteM3":"14","trasladoEstimadoMin":40},{"activo":true,"canton":"Patate","codigo":"PATATE","sector":"Patate y Valle de los Cristos","distanciaKm":"15","tarifaFleteM3":"9","trasladoEstimadoMin":28},{"activo":true,"canton":"Tisaleo","codigo":"TISALEO","sector":"Tisaleo Centro y Vía Alobamba","distanciaKm":"17","tarifaFleteM3":"9.5","trasladoEstimadoMin":30}],"resistencias":[{"activo":true,"codigo":"FC-180","imagen":"/images/catalogo/fc-180.jpg","fcKgfCm2":180,"precioM3":"72","bombeable":true,"normativa":"NTE INEN 1855-1 / ASTM C94","descripcion":"Hormigón prediseñado para obras complementarias, replantillos, aceras y bordillos con alta docilidad para colocación manual.","agregadoMaxMm":"19","nombreComercial":"Hormigón Estructural Liviano - Clase 180","slumpObjetivoMm":"100","edadGarantiaDias":28,"usosRecomendados":"Aceras peatonales, bordillos, contrapisos residenciales, cadenas de amarre de cerramiento y replantillos.","tiempoManejabilidadMin":90},{"activo":true,"codigo":"FC-210","imagen":"/images/catalogo/fc-210.jpg","fcKgfCm2":210,"precioM3":"78","bombeable":true,"normativa":"NTE INEN 1855-1 / NEC-SE-HM","descripcion":"El hormigón estructural estándar de mayor demanda en Tungurahua para losas, plintos, vigas y columnas residenciales.","agregadoMaxMm":"19","nombreComercial":"Hormigón Estructural Estándar - Clase 210","slumpObjetivoMm":"100","edadGarantiaDias":28,"usosRecomendados":"Losas macizas y alivianadas, vigas de entrepiso, columnas de viviendas de 1 a 2 plantas y plintos.","tiempoManejabilidadMin":90},{"activo":true,"codigo":"FC-240","imagen":"/images/catalogo/fc-240.jpg","fcKgfCm2":240,"precioM3":"84","bombeable":true,"normativa":"NTE INEN 1855-1 / NEC-SE-HM","descripcion":"Fórmula de alta cohesión diseñada para estructuras sismorresistentes de mediana altura (2 a 4 niveles) y armaduras densas.","agregadoMaxMm":"19","nombreComercial":"Hormigón Alta Cohesión - Clase 240","slumpObjetivoMm":"100","edadGarantiaDias":28,"usosRecomendados":"Edificaciones de 2 a 4 pisos, vigas peraltadas, muros de contención de media altura y losas nervadas.","tiempoManejabilidadMin":90},{"activo":true,"codigo":"FC-280","imagen":"/images/catalogo/fc-280.jpg","fcKgfCm2":280,"precioM3":"91","bombeable":true,"normativa":"NTE INEN 1855-1 / ASTM C94","descripcion":"Mezcla de alta resistencia y reducida permeabilidad para muros de contención, cisternas y estructuras sometidas a esfuerzos exigentes.","agregadoMaxMm":"19","nombreComercial":"Hormigón Alta Resistencia - Clase 280","slumpObjetivoMm":"100","edadGarantiaDias":28,"usosRecomendados":"Cisternas de agua, tanques elevados, muros de contención de taludes, zapatas masivas y parqueaderos pesados.","tiempoManejabilidadMin":90},{"activo":true,"codigo":"FC-350","imagen":"/images/catalogo/fc-350.jpg","fcKgfCm2":350,"precioM3":"105","bombeable":true,"normativa":"NTE INEN 1855-1 / ASTM C39","descripcion":"Hormigón de alto desempeño para pavimentos rígidos industriales, puentes, losas de tránsito pesado y elementos prefabricados.","agregadoMaxMm":"12.5","nombreComercial":"Hormigón Especial Alta Carga - Clase 350","slumpObjetivoMm":"115","edadGarantiaDias":28,"usosRecomendados":"Pavimentos industriales, rampas de carga pesada, puentes vehiculares, columnas de alta carga y prefabricados.","tiempoManejabilidadMin":90}],"datosDemostracion":false}$::jsonb,
-  'Configuración inicial técnica y comercial - Hormigonera Tungurahua (Salasaca)',
-  'd7378089-c586-4b69-be5c-21fb8e6b0bcc',
-  now()
-);
-
-INSERT INTO configuracion_actual (id, version) VALUES (1, 1);
 
 -- 3. CATÁLOGO TÉCNICO Y COMERCIAL
 CREATE TABLE resistencias (
@@ -82,13 +62,6 @@ CREATE TABLE resistencias (
   imagen text
 );
 
-INSERT INTO resistencias (codigo, fc_kgf_cm2, precio_m3, slump_objetivo_mm, agregado_max_mm, descripcion, activo, version_configuracion, nombre_comercial, usos_recomendados, tiempo_manejabilidad_min, bombeable, edad_garantia_dias, normativa, imagen) VALUES
-  ('FC-180', 180, 72.00, 100.000, 19.000, 'Hormigón prediseñado para obras complementarias, replantillos, aceras y bordillos con alta docilidad para colocación manual.', true, 1, 'Hormigón Estructural Liviano - Clase 180', 'Aceras peatonales, bordillos, contrapisos residenciales, cadenas de amarre de cerramiento y replantillos.', 90, true, 28, 'NTE INEN 1855-1 / ASTM C94', '/images/catalogo/fc-180.jpg'),
-  ('FC-210', 210, 78.00, 100.000, 19.000, 'El hormigón estructural estándar de mayor demanda en Tungurahua para losas, plintos, vigas y columnas residenciales.', true, 1, 'Hormigón Estructural Estándar - Clase 210', 'Losas macizas y alivianadas, vigas de entrepiso, columnas de viviendas de 1 a 2 plantas y plintos.', 90, true, 28, 'NTE INEN 1855-1 / NEC-SE-HM', '/images/catalogo/fc-210.jpg'),
-  ('FC-240', 240, 84.00, 100.000, 19.000, 'Fórmula de alta cohesión diseñada para estructuras sismorresistentes de mediana altura (2 a 4 niveles) y armaduras densas.', true, 1, 'Hormigón Alta Cohesión - Clase 240', 'Edificaciones de 2 a 4 pisos, vigas peraltadas, muros de contención de media altura y losas nervadas.', 90, true, 28, 'NTE INEN 1855-1 / NEC-SE-HM', '/images/catalogo/fc-240.jpg'),
-  ('FC-280', 280, 91.00, 100.000, 19.000, 'Mezcla de alta resistencia y reducida permeabilidad para muros de contención, cisternas y estructuras sometidas a esfuerzos exigentes.', true, 1, 'Hormigón Alta Resistencia - Clase 280', 'Cisternas de agua, tanques elevados, muros de contención de taludes, zapatas masivas y parqueaderos pesados.', 90, true, 28, 'NTE INEN 1855-1 / ASTM C94', '/images/catalogo/fc-280.jpg'),
-  ('FC-350', 350, 105.00, 115.000, 12.500, 'Hormigón de alto desempeño para pavimentos rígidos industriales, puentes, losas de tránsito pesado y elementos prefabricados.', true, 1, 'Hormigón Especial Alta Carga - Clase 350', 'Pavimentos industriales, rampas de carga pesada, puentes vehiculares, columnas de alta carga y prefabricados.', 90, true, 28, 'NTE INEN 1855-1 / ASTM C39', '/images/catalogo/fc-350.jpg');
-
 CREATE TABLE elementos_constructivos (
   codigo text PRIMARY KEY,
   nombre text NOT NULL,
@@ -97,16 +70,6 @@ CREATE TABLE elementos_constructivos (
   activo boolean NOT NULL,
   version_configuracion integer NOT NULL REFERENCES configuracion_versiones(version)
 );
-
-INSERT INTO elementos_constructivos (codigo, nombre, desperdicio_sugerido_pct, geometria, activo, version_configuracion) VALUES
-  ('COLUMNA-CIRCULAR', 'Columna circular', 5.000, 'CILINDRO', true, 1),
-  ('COLUMNA-RECTANGULAR', 'Columna rectangular', 5.000, 'PRISMA', true, 1),
-  ('LOSA-ALIVIANADA', 'Losa alivianada con bloques/nervios', 7.000, 'VOLUMEN_DIRECTO', true, 1),
-  ('LOSA-MACIZA', 'Losa maciza', 5.000, 'PRISMA', true, 1),
-  ('MURO-CONTENCION', 'Muro de contención o pantalla', 6.000, 'PRISMA', true, 1),
-  ('VIGA-AEREA', 'Viga de carga o peraltada', 5.000, 'PRISMA', true, 1),
-  ('VOLUMEN-DIRECTO', 'Volumen neto conocido', 5.000, 'VOLUMEN_DIRECTO', true, 1),
-  ('ZAPATA', 'Zapata o plinto de cimentación', 5.000, 'PRISMA', true, 1);
 
 CREATE TABLE zonas_flete (
   codigo text PRIMARY KEY,
@@ -119,17 +82,6 @@ CREATE TABLE zonas_flete (
   version_configuracion integer NOT NULL REFERENCES configuracion_versiones(version)
 );
 
-INSERT INTO zonas_flete (codigo, canton, sector, distancia_km, traslado_estimado_min, tarifa_flete_m3, activo, version_configuracion) VALUES
-  ('AMBATO-CENTRO-NORTE', 'Ambato', 'Ambato Centro y Norte (Ficoa / Miraflores / Atocha / Izamba)', 18.000, 35, 10.00, true, 1),
-  ('AMBATO-SUR', 'Ambato', 'Ambato Sur (Huachi Chico / Huachi Grande / Totoras)', 14.000, 25, 8.50, true, 1),
-  ('BANOS', 'Baños', 'Baños de Agua Santa (Casco Urbano)', 24.000, 40, 14.00, true, 1),
-  ('CEVALLOS', 'Cevallos', 'Cevallos Centro y Alrededores', 11.000, 20, 7.50, true, 1),
-  ('PATATE', 'Patate', 'Patate y Valle de los Cristos', 15.000, 28, 9.00, true, 1),
-  ('PELILEO-CENTRO', 'Pelileo', 'Pelileo Centro y Matriz', 4.000, 12, 6.00, true, 1),
-  ('PELILEO-GARCIA-MORENO', 'Pelileo', 'García Moreno y Huambaló', 8.000, 20, 7.50, true, 1),
-  ('SALASACA', 'Pelileo', 'Salasaca (Vía Principal y Comunidades)', 2.000, 8, 5.00, true, 1),
-  ('TISALEO', 'Tisaleo', 'Tisaleo Centro y Vía Alobamba', 17.000, 30, 9.50, true, 1);
-
 CREATE TABLE camiones_mixer (
   codigo text PRIMARY KEY,
   placa text NOT NULL UNIQUE,
@@ -138,13 +90,6 @@ CREATE TABLE camiones_mixer (
   estado text NOT NULL CHECK(estado IN ('DISPONIBLE','MANTENIMIENTO','INACTIVO')),
   version_configuracion integer NOT NULL REFERENCES configuracion_versiones(version)
 );
-
-INSERT INTO camiones_mixer (codigo, placa, marca_modelo, capacidad_m3, estado, version_configuracion) VALUES
-  ('HT-MIX-01', 'TBA-4120', 'Hino 700 / Mixer McNeilus 8m³', 8.000, 'DISPONIBLE', 1),
-  ('HT-MIX-02', 'TBH-6315', 'Mack Granite / Mixer Schwing Stetter 8m³', 8.000, 'DISPONIBLE', 1),
-  ('HT-MIX-03', 'TBC-8942', 'Mercedes-Benz Actros / Mixer Cifa 8m³', 8.000, 'DISPONIBLE', 1),
-  ('HT-MIX-04', 'TBJ-1209', 'International WorkStar / Mixer Putzmeister 8m³', 8.000, 'DISPONIBLE', 1),
-  ('HT-MIX-05', 'TGH-8531', 'Mixer Mack Granite 2024', 8.000, 'DISPONIBLE', 1);
 
 -- 4. CONDUCTORES
 CREATE TABLE conductores (
@@ -162,10 +107,10 @@ CREATE UNIQUE INDEX conductores_usuario_idx
   ON conductores(usuario_id)
   WHERE usuario_id IS NOT NULL;
 
-INSERT INTO conductores (id, nombre_completo, cedula, licencia_tipo, telefono, activo, creado_en, usuario_id) VALUES
-  ('50000000-0000-0000-0000-000000000001', 'Santiago Chango', '1800237609', 'Tipo E', '0999458712', true, '2026-10-14T02:55:17.186Z', '35dabd47-73cb-420a-834a-96d1695f5af9'),
-  ('50000000-0000-0000-0000-000000000002', 'Francisco Cabrera', '1700043218', 'Tipo E', '0996874234', true, '2026-10-14T02:55:17.186Z', '53f5eb05-0d81-438c-b355-b4faa08ee33a'),
-  ('d9804bfb-f2f4-4cd2-9c06-04ac6e6c5bba', 'Segundo Morales', '1501176795', 'Tipo E', '0982187126', true, '2026-10-16T05:56:34.320Z', '50d4b9fa-c154-4a5d-92e8-95e830c2cf1e');
+-- Datos iniciales (DEMO) para que el frontend pueda probar
+INSERT INTO conductores (id, nombre_completo, cedula, licencia_tipo, telefono, activo) VALUES
+  ('50000000-0000-0000-0000-000000000001', 'Juan Pérez', '1700000001', 'E', '0990000001', true),
+  ('50000000-0000-0000-0000-000000000002', 'Carlos López', '1700000002', 'E', '0990000002', true);
 
 -- 5. CLIENTES Y COTIZACIONES / PEDIDOS
 CREATE TABLE clientes (
