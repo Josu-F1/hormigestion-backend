@@ -64,3 +64,5 @@ El token automático tiene únicamente `contents: read`; checkout no conserva cr
 Ver [contrato provisional v1](contracts/ci-metrics.v1.md) y [JSON Schema](../schemas/ci-metrics.v1.schema.json). El adaptador actual de AgenteGestionProyectos todavía no descarga estas métricas: el artefacto prepara compatibilidad futura, no activa integración ni escrituras externas.
 
 `ci:metrics` requiere identidad real de Actions y estado explícito. No fabrica IDs locales. Los resúmenes pueden obtenerse localmente, pero no deben publicarse como evidencia de una ejecución que no ocurrió.
+
+Cualquier push o merge hacia `develop` o `main` dispara automáticamente el workflow `Backend quality` sobre el commit publicado en la rama.
